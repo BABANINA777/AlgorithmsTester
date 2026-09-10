@@ -1,0 +1,33 @@
+## Build and Compile Artifacts
+bin/
+obj/
+out/
+[Bb]uild/
+
+## Visual Studio & MSBuild
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+
+## JetBrains Rider & IntelliJ
+.idea/
+*.sln.iml
+
+## User-specific and cached files
+*.DotSettings.user
+*.suo
+
+## Windows / OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+## Crash dumps and test results
+*.crash
+*.dmp
+TestResults/

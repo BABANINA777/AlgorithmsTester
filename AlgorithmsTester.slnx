@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AlgorithmsTester.Core/AlgorithmsTester.Core.csproj" />
+  <Project Path="AlgorithmsTester.Desktop/AlgorithmsTester.Desktop.csproj" />
+</Solution>
