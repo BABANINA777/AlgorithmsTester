@@ -23,4 +23,15 @@
   <ItemGroup>
     <ProjectReference Include="..\AlgorithmsTester.Core\AlgorithmsTester.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="View\Card.axaml.cs">
+      <DependentUpon>Card.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\MainWindow.axaml.cs">
+      <DependentUpon>MainWindow.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
 </Project>

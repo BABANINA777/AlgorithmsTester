@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AlgorithmsTester.Desktop.ViewMadels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AlgorithmsTester.Desktop.Card"
+             x:DataType="vm:AlgorithmCardViewModel">
+    <Button Height="250" Width="400" Command="{Binding OpenCommand}">
+        <Border Background="{Binding AccentColor}"  >
+            <Grid RowDefinitions="Auto, Auto, *" HorizontalAlignment="Stretch">
+                <TextBlock FontSize="20" FontFamily="" Text="{Binding Title}" HorizontalAlignment="Center"/>
+                <Grid Grid.Row="1" ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0">
+                        <ItemsControl ItemsSource="{Binding Names}" HorizontalAlignment="Left">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock FontSize="14" Text="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <ItemsControl ItemsSource="{Binding Difficult}" HorizontalAlignment="Right">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock FontSize="14" Text="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                            
+                        </ItemsControl>
+                        
+                    </StackPanel>
+                </Grid>
+                <TextBlock Grid.Row="2" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" Text="{Binding RangeText}"/>
+            </Grid>
+            
+        </Border>
+    </Button>
+    
+</UserControl>

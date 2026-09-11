@@ -1,12 +1,13 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
 
 namespace AlgorithmsTester.Desktop;
 
-public partial class MainWindow : Window
+public partial class Card : UserControl
 {
-    public MainWindow()
+    public Card()
     {
         InitializeComponent();
-        
     }
 }

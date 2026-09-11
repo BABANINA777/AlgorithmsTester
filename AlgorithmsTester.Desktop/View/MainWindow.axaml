@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:desktop="clr-namespace:AlgorithmsTester.Desktop"
+        mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
+        x:Class="AlgorithmsTester.Desktop.MainWindow"
+        Title="BABANINA Production"
+        xmlns:vm="clr-namespace:AlgorithmsTester.Desktop.ViewMadels"
+        x:DataType="vm:MainWindowViewModel">
+    <Grid >
+        <!-- ЭКРАН 1: КАРТОЧКИ -->
+        <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCardsVisible}">
+            <desktop:Card DataContext="{Binding Cards[0]}" Margin="15" />
+            <desktop:Card DataContext="{Binding Cards[1]}" Margin="15" />
+            <desktop:Card DataContext="{Binding Cards[2]}" Margin="15" />
+            <desktop:Card DataContext="{Binding Cards[3]}" Margin="15" />
+            <desktop:Card DataContext="{Binding Cards[4]}" Margin="15" />
+        </WrapPanel>
+        
+        <!-- ЭКРАН 2: ГРАФИК -->
+        <Grid x:Name="ChartView" IsVisible="{Binding IsTableVisible}">
+            
+        </Grid>
+    </Grid>
+</Window>
