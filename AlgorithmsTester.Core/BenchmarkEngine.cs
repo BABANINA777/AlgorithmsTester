@@ -7,7 +7,7 @@ public class BenchmarkEngine
     private int _nStart;
     private int _nStop;
     private IAlgorithmTemplate _algorithm;
-    private int repeat = 5;//Нигде не используется - ЗАЧЕМ?
+    private int repeat = 5;//Нигде не используется - ЗАЧЕМ? - Нахуй нада
 
     public BenchmarkEngine(int nstart, int nstop, IAlgorithmTemplate algorithm)
     {

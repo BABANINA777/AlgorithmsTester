@@ -30,6 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Result\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="View\Card.axaml.cs">
       <DependentUpon>Card.axaml</DependentUpon>
       <SubType>Code</SubType>
