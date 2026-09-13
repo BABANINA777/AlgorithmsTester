@@ -3,12 +3,18 @@ namespace AlgorithmsTester.Core;
 public class DataGenerator
 {
     private static Random _random = new Random();
+
+    private static double RandomDouble (double min, double max)
+    {
+        return _random.NextDouble() * (max - min) + min;
+    }
+
     public static double[] GenerateVector(int n)
     {
         double[] vector = new double[n];
         for (int i = 0; i < n; i++)
         {
-            vector[i] = _random.Next(1000, 10000);
+            vector[i] = RandomDouble(1000, 10_000);
         }
         return vector;
     }
@@ -20,7 +26,7 @@ public class DataGenerator
         {
             for (int j = 0; j < n; j++)
             {
-                matrix[i, j] = _random.NextDouble() * (10000 - 1000) + 1000;
+                matrix[i, j] = RandomDouble(1000, 10_000);
             }
         }
         return matrix;
