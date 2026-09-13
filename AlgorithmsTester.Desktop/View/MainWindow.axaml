@@ -6,7 +6,9 @@
         mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
         x:Class="AlgorithmsTester.Desktop.MainWindow"
         Title="BABANINA Production"
+        Icon="/Assets/icon.ico"
         xmlns:vm="clr-namespace:AlgorithmsTester.Desktop.ViewMadels"
+        xmlns:sp="using:ScottPlot.Avalonia"
         x:DataType="vm:MainWindowViewModel">
     <Grid >
         <!-- ЭКРАН 1: КАРТОЧКИ -->
@@ -19,8 +21,112 @@
         </WrapPanel>
         
         <!-- ЭКРАН 2: ГРАФИК -->
-        <Grid x:Name="ChartView" IsVisible="{Binding IsTableVisible}">
+        <Grid x:Name="ChartView" IsVisible="{Binding IsTableVisible}" RowDefinitions="Auto, *">
+            <!--кнопки управления-->
+            <StackPanel Orientation="Horizontal" Spacing="20" Margin="20" VerticalAlignment="Center">
+                <Button Height="44" Width="44" 
+                        Command="{Binding GoBackCommand}" 
+                        Background="#1E1E24" 
+                        BorderThickness="1" 
+                        BorderBrush="#33FFFFFF" 
+                        CornerRadius="8"
+                        Padding="0">
+                    <Path Data="M 5, 25 L 20 10 L 20 20 L 40 20 L 40 30 L 20 30 L 20 40 L 5 25"  
+                          StrokeThickness="1" 
+                          Stroke="White" 
+                          Fill="White" 
+                          Width="16" Height="16"
+                          Stretch="Uniform"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
+                </Button>
+                <ItemsControl ItemsSource="{Binding SelectedCard.SeriesList}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="15"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Vertical" Spacing="6">
+                                <ToggleButton Height="32" Padding="12,2" 
+                                              CornerRadius="8" 
+                                              Background="#121214" 
+                                              BorderThickness="1" 
+                                              BorderBrush="#33FFFFFF" 
+                                              IsChecked="{Binding IsEnabled}">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsEnabled}">
+                                            <Ellipse Width="10" Height="10" Fill="{Binding Color}">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect BlurRadius="12" 
+                                                                      Color="{Binding Color}" 
+                                                                      Opacity="0.9" 
+                                                                      OffsetX="0" 
+                                                                      OffsetY="0" /> 
+                                                </Ellipse.Effect> 
+                                            </Ellipse>
+                                            <TextBlock Foreground="White" 
+                                                       FontFamily="Inter, Segoe UI, sans-serif"
+                                                       FontSize="13"
+                                                       Text="{Binding Name}" 
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsEnabled}">
+                                            <Ellipse Width="10" Height="10" Fill="#555555"/>
+                                            <TextBlock Foreground="#666666" 
+                                                       FontFamily="Inter, Segoe UI, sans-serif"
+                                                       FontSize="13"
+                                                       Text="{Binding Name}" 
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ToggleButton>
+                                <ToggleButton Height="32" Padding="12,2" 
+                                              CornerRadius="8"  
+                                              Background="#121214" 
+                                              BorderThickness="1" 
+                                              BorderBrush="#33FFFFFF" 
+                                              IsChecked="{Binding IsTheoreticalEnabled}">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsTheoreticalEnabled}" >
+                                            <Ellipse Width="10" Height="10" Fill="{Binding TheoreticalColor}">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect BlurRadius="12" 
+                                                                      Color="{Binding TheoreticalColor}" 
+                                                                      Opacity="0.9" 
+                                                                      OffsetX="0" 
+                                                                      OffsetY="0" /> 
+                                                </Ellipse.Effect> 
+                                            </Ellipse>
+                                            <TextBlock Foreground="White" 
+                                                       FontFamily="Inter, Segoe UI, sans-serif"
+                                                       FontSize="13"
+                                                       Text="{Binding TheoreticalName}" 
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsTheoreticalEnabled}">
+                                            <Ellipse Width="10" Height="10" Fill="#555555"/>
+                                            <TextBlock Foreground="#666666" 
+                                                       FontFamily="Inter, Segoe UI, sans-serif"
+                                                       FontSize="13"
+                                                       Text="{Binding TheoreticalName}" 
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ToggleButton>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
             
+            <!--сам график-->
+            <Border Grid.Row="1" Margin="20" Background="#1E1E24" CornerRadius="12">
+                <sp:AvaPlot Name="BenchmarkPlot">
+                    
+                </sp:AvaPlot>
+            </Border>
         </Grid>
     </Grid>
 </Window>

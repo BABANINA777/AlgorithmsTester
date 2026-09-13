@@ -1,6 +1,8 @@
+using System;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+
 
 namespace AlgorithmsTester.Desktop.ViewMadels;
 
@@ -18,9 +20,11 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private AlgorithmCardViewModel? _selectedCard;
 
+    public Action<AlgorithmCardViewModel>? OnPlotRequested;
+
     public MainWindowViewModel()
     {
-        Cards.Add(new AlgorithmCardViewModel("Векторные операции", ["Константа", "Сумма", "Произведение"], ["O(1)", "O(n)", "O(n)"], "#5B8FB9", 80000, 100000, OpenCard));
+        Cards.Add(new AlgorithmCardViewModel("Векторные операции", ["Константа", "Сумма", "Произведение"], ["O(1)", "O(n)", "O(n)"], "#5B8FB9", 80000, 100000,["#38BDF8", "#2563EB","#1E3A8A", "#FDBA74","#F97316","#C2410C"] ,OpenCard));
     }
     
     // Метод: открыть таблицу по нажатию
@@ -29,6 +33,8 @@ public partial class MainWindowViewModel : ObservableObject
         SelectedCard = card;
         IsCardsVisible = false;
         IsTableVisible = true;
+        OnPlotRequested?.Invoke(card);
+        
     }
     // Метод: вернуться назад к карточкам
     [RelayCommand]
