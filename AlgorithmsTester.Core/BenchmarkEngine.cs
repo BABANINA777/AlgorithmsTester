@@ -6,13 +6,17 @@ public class BenchmarkEngine
 {
     private readonly int _nStart;
     private readonly int _nStop;
+    private readonly int _steps;
+    private readonly int _repeats;
     private readonly IAlgorithmTemplate _algorithm;
 
-    public BenchmarkEngine(int nstart, int nstop, IAlgorithmTemplate algorithm)
+    public BenchmarkEngine(int nstart, int nstop,int steps,int repeats ,IAlgorithmTemplate algorithm)
     {
         _nStart = nstart;
         _nStop = nstop;
         _algorithm = algorithm;
+        _steps = steps;
+        _repeats = repeats;
     }
 
     public List<double> AlgorithmTimer()
@@ -24,11 +28,11 @@ public class BenchmarkEngine
         _algorithm.PrepareData(_nStart);
         _algorithm.Run();
 
-        for (int nSize = _nStart; nSize < _nStop; nSize += 50)
+        for (int nSize = _nStart; nSize <= _nStop; nSize += _steps)
         {
             List<double> runTimes = new List<double>();
 
-            for (int runIndex = 0; runIndex < 5; runIndex++)
+            for (int runIndex = 0; runIndex < _repeats; runIndex++)
             {
                 // Подготавливаем новые данные перед каждым запуском
                 _algorithm.PrepareData(nSize);
@@ -68,7 +72,7 @@ public class BenchmarkEngine
                         "F6",
                         System.Globalization.CultureInfo.InvariantCulture)}");
 
-                n += 50;
+                n += _steps;
             }
         }
 

@@ -8,6 +8,7 @@
         Title="BABANINA Production"
         Icon="/Assets/icon.ico"
         xmlns:vm="clr-namespace:AlgorithmsTester.Desktop.ViewMadels"
+        xmlns:core="using:AlgorithmsTester.Core"
         xmlns:sp="using:ScottPlot.Avalonia"
         x:DataType="vm:MainWindowViewModel">
     <Grid >
@@ -21,7 +22,7 @@
         </WrapPanel>
         
         <!-- ЭКРАН 2: ГРАФИК -->
-        <Grid x:Name="ChartView" IsVisible="{Binding IsTableVisible}" RowDefinitions="Auto, *">
+        <Grid x:Name="ChartView" IsVisible="{Binding IsTableVisible}" RowDefinitions="Auto, *, Auto">
             <!--кнопки управления-->
             <StackPanel Orientation="Horizontal" Spacing="20" Margin="20" VerticalAlignment="Center">
                 <Button Height="44" Width="44" 
@@ -29,15 +30,15 @@
                         Background="#1E1E24" 
                         BorderThickness="1" 
                         BorderBrush="#33FFFFFF" 
-                        CornerRadius="8"
+                        CornerRadius="8" 
                         Padding="0">
                     <Path Data="M 5, 25 L 20 10 L 20 20 L 40 20 L 40 30 L 20 30 L 20 40 L 5 25"  
                           StrokeThickness="1" 
                           Stroke="White" 
                           Fill="White" 
-                          Width="16" Height="16"
-                          Stretch="Uniform"
-                          HorizontalAlignment="Center"
+                          Width="16" Height="16" 
+                          Stretch="Uniform" 
+                          HorizontalAlignment="Center" 
                           VerticalAlignment="Center"/>
                 </Button>
                 <ItemsControl ItemsSource="{Binding SelectedCard.SeriesList}">
@@ -67,16 +68,16 @@
                                                 </Ellipse.Effect> 
                                             </Ellipse>
                                             <TextBlock Foreground="White" 
-                                                       FontFamily="Inter, Segoe UI, sans-serif"
-                                                       FontSize="13"
+                                                       FontFamily="Inter, Segoe UI, sans-serif" 
+                                                       FontSize="13" 
                                                        Text="{Binding Name}" 
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsEnabled}">
                                             <Ellipse Width="10" Height="10" Fill="#555555"/>
                                             <TextBlock Foreground="#666666" 
-                                                       FontFamily="Inter, Segoe UI, sans-serif"
-                                                       FontSize="13"
+                                                       FontFamily="Inter, Segoe UI, sans-serif" 
+                                                       FontSize="13" 
                                                        Text="{Binding Name}" 
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -100,16 +101,16 @@
                                                 </Ellipse.Effect> 
                                             </Ellipse>
                                             <TextBlock Foreground="White" 
-                                                       FontFamily="Inter, Segoe UI, sans-serif"
-                                                       FontSize="13"
+                                                       FontFamily="Inter, Segoe UI, sans-serif" 
+                                                       FontSize="13" 
                                                        Text="{Binding TheoreticalName}" 
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsTheoreticalEnabled}">
                                             <Ellipse Width="10" Height="10" Fill="#555555"/>
                                             <TextBlock Foreground="#666666" 
-                                                       FontFamily="Inter, Segoe UI, sans-serif"
-                                                       FontSize="13"
+                                                       FontFamily="Inter, Segoe UI, sans-serif" 
+                                                       FontSize="13" 
                                                        Text="{Binding TheoreticalName}" 
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -122,10 +123,145 @@
             </StackPanel>
             
             <!--сам график-->
-            <Border Grid.Row="1" Margin="20" Background="#1E1E24" CornerRadius="12">
-                <sp:AvaPlot Name="BenchmarkPlot">
-                    
-                </sp:AvaPlot>
+            <Border Grid.Row="1" Margin="20,0,20,15" Background="#1E1E24" CornerRadius="12">
+                <sp:AvaPlot Name="BenchmarkPlot" />
+            </Border>
+
+            <!--НИЖНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ-->
+            <Border Grid.Row="2" 
+                    Margin="20,0,20,20" 
+                    Padding="16,12" 
+                    Background="#1E1E24" 
+                    BorderBrush="#33FFFFFF" 
+                    BorderThickness="1" 
+                    CornerRadius="12">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <!-- ЛЕВАЯ ЧАСТЬ: Запуск нового прогона -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <!-- Выбор алгоритма -->
+                        <ComboBox Name="AlgorithmSelector"
+                                  Width="180" 
+                                  Height="36" 
+                                  PlaceholderText="Алгоритм" 
+                                  Background="#121214" 
+                                  Foreground="White" 
+                                  BorderBrush="#33FFFFFF" 
+                                  BorderThickness="1" 
+                                  CornerRadius="8" 
+                                  VerticalContentAlignment="Center"/>
+
+                        <!-- Параметры N от, До, Шаг, Повторы -->
+                        <TextBox Name="NStartInput"
+                                 Width="75" 
+                                 Height="36" 
+                                 Watermark="N от" 
+                                 Text="10"
+                                 Background="#121214" 
+                                 Foreground="White" 
+                                 BorderBrush="#33FFFFFF" 
+                                 BorderThickness="1" 
+                                 CornerRadius="8" 
+                                 VerticalContentAlignment="Center" 
+                                 HorizontalContentAlignment="Center"/>
+
+                        <TextBox Name="NStopInput"
+                                 Width="80" 
+                                 Height="36" 
+                                 Watermark="N до" 
+                                 Text="300"
+                                 Background="#121214" 
+                                 Foreground="White" 
+                                 BorderBrush="#33FFFFFF" 
+                                 BorderThickness="1" 
+                                 CornerRadius="8" 
+                                 VerticalContentAlignment="Center" 
+                                 HorizontalContentAlignment="Center"/>
+                        
+                        <TextBox Name="RepeatsInput"
+                                 Width="75" 
+                                 Height="36" 
+                                 Watermark="Повторы" 
+                                 Text="5"
+                                 Background="#121214" 
+                                 Foreground="White" 
+                                 BorderBrush="#33FFFFFF" 
+                                 BorderThickness="1" 
+                                 CornerRadius="8" 
+                                 VerticalContentAlignment="Center" 
+                                 HorizontalContentAlignment="Center"/>
+
+                        <!-- Кнопка запуска прогона -->
+                        <Button Name="RunBenchmarkButton"
+                                Click="RunBenchmarkButton_Click"
+                                Height="36" 
+                                Padding="16,0" 
+                                Background="#059669" 
+                                Foreground="White" 
+                                FontWeight="SemiBold" 
+                                CornerRadius="8" 
+                                Cursor="Hand"
+                                VerticalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Data="M 4 2 L 14 8 L 4 14 Z" 
+                                      Fill="White" 
+                                      Width="10" 
+                                      Height="10" 
+                                      Stretch="Uniform" 
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Сделать прогон" 
+                                           FontFamily="Inter, Segoe UI, sans-serif" 
+                                           FontSize="13" 
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- ПРАВАЯ ЧАСТЬ: История прогонов из базы данных -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="История:" 
+                                   Foreground="#8E8E93" 
+                                   FontFamily="Inter, Segoe UI, sans-serif" 
+                                   FontSize="13" 
+                                   VerticalAlignment="Center"/>
+
+                        <ComboBox Name="HistoryRunsSelector"
+                                  Width="210" 
+                                  Height="36" 
+                                  PlaceholderText="Выбрать прогон..." 
+                                  ItemsSource="{Binding HistoryRuns}"
+                                  SelectedItem="{Binding SelectedHistoryRun}"
+                                  SelectionChanged="HistoryRunsSelector_SelectionChanged"
+                                  Background="#121214" 
+                                  Foreground="White" 
+                                  BorderBrush="#33FFFFFF" 
+                                  BorderThickness="1" 
+                                  CornerRadius="8" 
+                                  VerticalContentAlignment="Center">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="core:RunHistoryItem">
+                                    <TextBlock Text="{Binding DisplayText}" Foreground="White" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Button Name="LoadHistoryButton"
+                                Click="LoadHistoryButton_Click"
+                                Height="36" 
+                                Padding="14,0" 
+                                Background="#2563EB" 
+                                Foreground="White" 
+                                FontWeight="SemiBold" 
+                                CornerRadius="8" 
+                                Cursor="Hand"
+                                VerticalContentAlignment="Center">
+                            <TextBlock Name="LoadHistoryButtonText"
+                                       Text="Показать" 
+                                       FontFamily="Inter, Segoe UI, sans-serif" 
+                                       FontSize="13" 
+                                       VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

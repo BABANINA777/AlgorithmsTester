@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using AlgorithmsTester.Core;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -19,6 +21,12 @@ public partial class MainWindowViewModel : ObservableObject
     // 3. Запоминаем, на какую карточку нажали
     [ObservableProperty]
     private AlgorithmCardViewModel? _selectedCard;
+
+    // 4. Список сохранённых прогонов для выбранной карточки
+    public ObservableCollection<RunHistoryItem> HistoryRuns { get; } = new ObservableCollection<RunHistoryItem>();
+
+    [ObservableProperty]
+    private RunHistoryItem? _selectedHistoryRun;
 
     public Action<AlgorithmCardViewModel>? OnPlotRequested;
 
@@ -60,14 +68,14 @@ public partial class MainWindowViewModel : ObservableObject
             ["Пузырьковая", "Быстрая (QuickSort)", "Timsort"],
             ["O(n²)", "O(n log n)", "O(n log n)"],
             "#EF4444",
-            50, 2000,
+            2000, 5000,
             ["#F87171", "#DC2626", "#991B1B", "#FDBA74", "#F97316", "#C2410C"],
             OpenCard));
 
         // 5. Матричные операции (Миша и Арсений)
         Cards.Add(new AlgorithmCardViewModel(
             "Матричные операции",
-            ["Умножение матриц", "Алгоритм Карацубы", "Расстояние Левенштейна"],
+            ["Умножение матриц", "Алгоритм Карацубы", "Алгоритм Дейкстры"],
             ["O(n³)", "O(n^1.585)", "O(n²)"],
             "#8B5CF6",
             10, 300,
@@ -81,9 +89,24 @@ public partial class MainWindowViewModel : ObservableObject
         SelectedCard = card;
         IsCardsVisible = false;
         IsTableVisible = true;
+
+        // Загружаем сохранённые прогоны для выбранной карточки из базы
+        LoadHistoryForCard(card.Title);
+
         OnPlotRequested?.Invoke(card);
-        
     }
+
+    // Загрузка истории прогонов для карточки из базы данных
+    public void LoadHistoryForCard(string cardTitle)
+    {
+        HistoryRuns.Clear();
+        List<RunHistoryItem> runs = DatabaseManager.GetHistoryRuns(cardTitle);
+        for (int i = 0; i < runs.Count; i++)
+        {
+            HistoryRuns.Add(runs[i]);
+        }
+    }
+
     // Метод: вернуться назад к карточкам
     [RelayCommand]
     public void GoBack()
