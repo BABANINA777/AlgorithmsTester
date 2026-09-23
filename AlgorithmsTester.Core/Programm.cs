@@ -9,17 +9,18 @@ public class Programm
     {
         int nstart = 10;
         int nstop = 300;
-        //IAlgorithmTemplate algorithm = new VectorAlgorithms();
-        //IAlgorithmTemplate algorithm = new ConstAlgorithms();
-        //IAlgorithmTemplate algorithm = new MultiplicationAlgorithms();
-        //IAlgorithmTemplate algorithm = new NaivePolynomialAlgorithm();
-        //IAlgorithmTemplate algorithm = new HornerPolynomialAlgorithm();
-        //IAlgorithmTemplate algorithm = new SimplePowAlgorithm();
-        //IAlgorithmTemplate algorithm = new RecPowAlgorithm();
-        IAlgorithmTemplate algorithm = new KaratsubaAlgorithm();
+        //var algorithm = new VectorAlgorithms();
+        //var algorithm = new ConstAlgorithms();
+        //var algorithm = new MultiplicationAlgorithms();
+        //var algorithm = new NaivePolynomialAlgorithm();
+        //var algorithm = new HornerPolynomialAlgorithm();
+        //var algorithm = new SimplePowAlgorithm();
+        //var algorithm = new RecPowAlgorithm();
+        //var algorithm = new DijkstraAlgorithm();
+        var algorithm = new KaratsubaAlgorithm();
 
-        BenchmarkEngine bench = new BenchmarkEngine(nstart, nstop, algorithm);
-        List<double> realtime = bench.AlgorithmTimer();
+        var benchmark = new BenchmarkEngine(nstart, nstop, algorithm);
+        List<double> realtime = benchmark.AlgorithmTimer();
         TheoreticalFitter fitter = new TheoreticalFitter(algorithm);
         fitter.TeoreticalAlgorithmTimer(nstart, nstop, realtime);
     }

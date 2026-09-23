@@ -2,13 +2,14 @@ namespace AlgorithmsTester.Core;
 
 public class TheoreticalFitter
 {
-    IAlgorithmTemplate _template;
+    private readonly IAlgorithmTemplate _template;
+
     public TheoreticalFitter(IAlgorithmTemplate template)
     {
         _template = template;
     }
 
-    private double GetTheoreticalG(double n)// метод для помощи с вычислением C
+    private double GetTheoreticalG(double n)
     {
         return _template.Complexity switch
         {
@@ -22,36 +23,48 @@ public class TheoreticalFitter
             _ => n
         };
     }
-    
-    public void TeoreticalAlgorithmTimer(int nstart, int nstop, List<double> realTimes)
+
+    public double TeoreticalAlgorithmTimer(int nStart, int nStop, List<double> realTimes, int step = 50)
     {
-        // вычисление C
         double numerator = 0;
         double denominator = 0;
-        int n = nstart;
+        int n = nStart;
+
         for (int i = 0; i < realTimes.Count; i++)
         {
-            numerator += realTimes[i] * GetTheoreticalG(n);
-            denominator += GetTheoreticalG(n)*GetTheoreticalG(n);
-            n += 50;
+            double gn = GetTheoreticalG(n);
+            numerator += realTimes[i] * gn;
+            denominator += gn * gn;
+            n += step;
         }
-        double C = numerator / denominator;
-        
-        //часть с записью результатов в файл и созданием теоретических точек
+
+        double C = denominator != 0 ? numerator / denominator : 0;
+
+        // Расчёт MSE и запись в CSV
         string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Result");
         Directory.CreateDirectory(folderPath);
         string fileName = $"{_template.Name}_{_template.Complexity}_Teoreticalresults.csv";
         string fullPath = Path.Combine(folderPath, fileName);
+
+        double sumSquaredErrors = 0;
+
         using (StreamWriter file = new StreamWriter(fullPath))
         {
-            n = nstart;
+            n = nStart;
             for (int i = 0; i < realTimes.Count; i++)
             {
                 double gn = GetTheoreticalG(n);
-                double tTeor = C * gn; // теоретическое время для точки
+                double tTeor = C * gn;
+
+                double diff = realTimes[i] - tTeor;
+                sumSquaredErrors += diff * diff;
+
                 file.WriteLine($"{n};{tTeor.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)}");
-                n += 50;
+                n += step;
             }
         }
+
+        double mse = realTimes.Count > 0 ? sumSquaredErrors / realTimes.Count : 0;
+        return mse;
     }
 }
