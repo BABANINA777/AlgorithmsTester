@@ -8,28 +8,33 @@ public class Programm
 {
     public static void Main(string[] args)
     {
-        int nstart = 50;
-        int nstop = 300;
+        int nstart = 80000;
+        int nstop = 100000;
         int steps = 50;
-        int repeats = 5;
+        int repeats = 1;
         //var algorithm = new VectorAlgorithms();
         //var algorithm = new ConstAlgorithms();
-        //var algorithm = new MultiplicationAlgorithms();
+        var algorithm = new MultiplicationAlgorithms();
         //var algorithm = new NaivePolynomialAlgorithm();
         //var algorithm = new HornerPolynomialAlgorithm();
+        
         //var algorithm = new SimplePowAlgorithm();
-        //var algorithm = new RecPowAlgorithm();
+        //var algorithm = new RecursiveLinearPowAlgorithm();
+        //var algorithm = new QuickPowAlgorithm();
+        
         //var algorithm = new DijkstraAlgorithm();
         //var algorithm = new KaratsubaAlgorithm();
         //var algorithm = new BubbleSortAlgorithm();
         //var algorithm = new QuickSortAlgorithm();
         //var algorithm = new TimsortAlgorithm();
-        var algorithm = new MatrixMultiplicationAlgorithm();
+        //var algorithm = new MatrixMultiplicationAlgorithm();
         
         var benchmark = new BenchmarkEngine(nstart, nstop,steps, repeats, algorithm);
         List<double> realtime = benchmark.AlgorithmTimer();
+        //List<double> stepcount = benchmark.AlgorithmCount();
         TheoreticalFitter fitter = new TheoreticalFitter(algorithm);
         fitter.TeoreticalAlgorithmTimer(nstart, nstop, realtime, steps);
+        //fitter.TeoreticalAlgorithmTimer(nstart, nstop, stepcount, steps);
         
         //DatabaseManager.SaveExperimentRun("Вектор", algorithm,nstart, nstop, steps, repeats, realtime);
         //CreateTable();

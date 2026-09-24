@@ -86,12 +86,14 @@ public partial class MainWindow : Window
         {
             BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedBottom(BenchmarkPlot.Plot.Axes.Left, 0));
 
-            double[] times0 = LoadCsv(Path.Combine(res, "Const_O_1_results.csv"));
-            double[] times0theor = LoadCsv(Path.Combine(res, "Const_O_1_Teoreticalresults.csv"));
-            double[] times1 = LoadCsv(Path.Combine(res, "Vector_O_n_results.csv"));
-            double[] times1theor = LoadCsv(Path.Combine(res, "Vector_O_n_Teoreticalresults.csv"));
-            double[] times2 = LoadCsv(Path.Combine(res, "Multiplication_O_1_results.csv"));
-            double[] times2theor = LoadCsv(Path.Combine(res, "Multiplication_O_1_Teoreticalresults.csv"));
+            var (off0, per0, times0) = LoadCsvSignal(Path.Combine(res, "Const_O_1_results.csv"), 80000, 50);
+            var (_, _, times0theor) = LoadCsvSignal(Path.Combine(res, "Const_O_1_Teoreticalresults.csv"), 80000, 50);
+
+            var (off1, per1, times1) = LoadCsvSignal(Path.Combine(res, "Vector_O_n_results.csv"), 80000, 50);
+            var (_, _, times1theor) = LoadCsvSignal(Path.Combine(res, "Vector_O_n_Teoreticalresults.csv"), 80000, 50);
+
+            var (off2, per2, times2) = LoadCsvSignal(Path.Combine(res, "Multiplication_O_n_results.csv"), 80000, 50);
+            var (_, _, times2theor) = LoadCsvSignal(Path.Combine(res, "Multiplication_O_n_Teoreticalresults.csv"), 80000, 50);
 
             double[] times0null = new double[times0.Length];
             double[] times0theornull = new double[times0theor.Length];
@@ -100,6 +102,14 @@ public partial class MainWindow : Window
             double[] times2null = new double[times2.Length];
             double[] times2theornull = new double[times2theor.Length];
 
+            double minX = Math.Min(off0, Math.Min(off1, off2));
+            double maxX = Math.Max(off0 + (times0.Length > 0 ? (times0.Length - 1) * per0 : 0),
+                          Math.Max(off1 + (times1.Length > 0 ? (times1.Length - 1) * per1 : 0),
+                                   off2 + (times2.Length > 0 ? (times2.Length - 1) * per2 : 0)));
+            if (maxX <= minX) maxX = minX + 20000;
+
+            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, minX));
+
             // Настройка лимитов камеры ДО анимации
             double maxY = 0.1;
             var allTimes = times0.Concat(times1).Concat(times2).Concat(times0theor).Concat(times1theor).Concat(times2theor).ToList();
@@ -107,31 +117,31 @@ public partial class MainWindow : Window
             {
                 maxY = allTimes.Max();
             }
-            BenchmarkPlot.Plot.Axes.SetLimits(80000, 100000, 0, Math.Max(0.01, maxY * 1.15));
+            BenchmarkPlot.Plot.Axes.SetLimits(minX, maxX, 0, Math.Max(0.01, maxY * 1.15));
 
             // Сигналы для 3 алгоритмов (Константа, Сумма, Произведение)
             var signal0 = BenchmarkPlot.Plot.Add.Signal(times0null);
-            signal0.Data.Period = 50; signal0.Data.XOffset = 80000;
+            signal0.Data.Period = per0; signal0.Data.XOffset = off0;
             signal0.Color = Color.FromHex(Card.AlghorithmColor[0]); signal0.LineWidth = 1.5f;
 
             var signal0theor = BenchmarkPlot.Plot.Add.Signal(times0theornull);
-            signal0theor.Data.Period = 50; signal0theor.Data.XOffset = 80000;
+            signal0theor.Data.Period = per0; signal0theor.Data.XOffset = off0;
             signal0theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[0]); signal0theor.LineWidth = 1.5f;
 
             var signal1 = BenchmarkPlot.Plot.Add.Signal(times1null);
-            signal1.Data.Period = 50; signal1.Data.XOffset = 80000;
+            signal1.Data.Period = per1; signal1.Data.XOffset = off1;
             signal1.Color = Color.FromHex(Card.AlghorithmColor[1]); signal1.LineWidth = 1.5f;
 
             var signal1theor = BenchmarkPlot.Plot.Add.Signal(times1theornull);
-            signal1theor.Data.Period = 50; signal1theor.Data.XOffset = 80000;
+            signal1theor.Data.Period = per1; signal1theor.Data.XOffset = off1;
             signal1theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[1]); signal1theor.LineWidth = 1.5f;
 
             var signal2 = BenchmarkPlot.Plot.Add.Signal(times2null);
-            signal2.Data.Period = 50; signal2.Data.XOffset = 80000;
+            signal2.Data.Period = per2; signal2.Data.XOffset = off2;
             signal2.Color = Color.FromHex(Card.AlghorithmColor[2]); signal2.LineWidth = 1.5f;
 
             var signal2theor = BenchmarkPlot.Plot.Add.Signal(times2theornull);
-            signal2theor.Data.Period = 50; signal2theor.Data.XOffset = 80000;
+            signal2theor.Data.Period = per2; signal2theor.Data.XOffset = off2;
             signal2theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[2]); signal2theor.LineWidth = 1.5f;
 
             // Связка с кнопками (серия 0, 1, 2)
@@ -161,17 +171,24 @@ public partial class MainWindow : Window
         else if (Card.Title == "Полиномы")
         {
             BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedBottom(BenchmarkPlot.Plot.Axes.Left, 0));
-            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, 50));
 
-            double[] times0 = LoadCsv(Path.Combine(res, "PolynomialNaive_O_n2_results.csv"));
-            double[] times0theor = LoadCsv(Path.Combine(res, "PolynomialNaive_O_n2_Teoreticalresults.csv"));
-            double[] times1 = LoadCsv(Path.Combine(res, "PolynomialHorner_O_n_results.csv"));
-            double[] times1theor = LoadCsv(Path.Combine(res, "PolynomialHorner_O_n_Teoreticalresults.csv"));
+            var (off0, per0, times0) = LoadCsvSignal(Path.Combine(res, "PolynomialNaive_O_n2_results.csv"), 50, 50);
+            var (_, _, times0theor) = LoadCsvSignal(Path.Combine(res, "PolynomialNaive_O_n2_Teoreticalresults.csv"), 50, 50);
+
+            var (off1, per1, times1) = LoadCsvSignal(Path.Combine(res, "PolynomialHorner_O_n_results.csv"), 50, 50);
+            var (_, _, times1theor) = LoadCsvSignal(Path.Combine(res, "PolynomialHorner_O_n_Teoreticalresults.csv"), 50, 50);
 
             double[] times0null = new double[times0.Length];
             double[] times0theornull = new double[times0theor.Length];
             double[] times1null = new double[times1.Length];
             double[] times1theornull = new double[times1theor.Length];
+
+            double minX = Math.Min(off0, off1);
+            double maxX = Math.Max(off0 + (times0.Length > 0 ? (times0.Length - 1) * per0 : 0),
+                                   off1 + (times1.Length > 0 ? (times1.Length - 1) * per1 : 0));
+            if (maxX <= minX) maxX = minX + 2000;
+
+            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, minX));
 
             // Настройка лимитов камеры ДО анимации
             double maxY = 1.0;
@@ -180,23 +197,23 @@ public partial class MainWindow : Window
             {
                 maxY = allTimes.Max();
             }
-            BenchmarkPlot.Plot.Axes.SetLimits(50, 2000, 0, Math.Max(0.01, maxY * 1.15));
+            BenchmarkPlot.Plot.Axes.SetLimits(minX, maxX, 0, Math.Max(0.01, maxY * 1.15));
 
             // Сигналы для 2 алгоритмов полинома (Прямой/Наивный и Метод Горнера)
             var signal0 = BenchmarkPlot.Plot.Add.Signal(times0null);
-            signal0.Data.Period = 50; signal0.Data.XOffset = 50;
+            signal0.Data.Period = per0; signal0.Data.XOffset = off0;
             signal0.Color = Color.FromHex(Card.AlghorithmColor[0]); signal0.LineWidth = 1.5f;
 
             var signal0theor = BenchmarkPlot.Plot.Add.Signal(times0theornull);
-            signal0theor.Data.Period = 50; signal0theor.Data.XOffset = 50;
+            signal0theor.Data.Period = per0; signal0theor.Data.XOffset = off0;
             signal0theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[0]); signal0theor.LineWidth = 1.5f;
 
             var signal1 = BenchmarkPlot.Plot.Add.Signal(times1null);
-            signal1.Data.Period = 50; signal1.Data.XOffset = 50;
+            signal1.Data.Period = per1; signal1.Data.XOffset = off1;
             signal1.Color = Color.FromHex(Card.AlghorithmColor[1]); signal1.LineWidth = 1.5f;
 
             var signal1theor = BenchmarkPlot.Plot.Add.Signal(times1theornull);
-            signal1theor.Data.Period = 50; signal1theor.Data.XOffset = 50;
+            signal1theor.Data.Period = per1; signal1theor.Data.XOffset = off1;
             signal1theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[1]); signal1theor.LineWidth = 1.5f;
 
             // Связка с кнопками (серия 0 и 1)
@@ -223,16 +240,15 @@ public partial class MainWindow : Window
         else if (Card.Title == "Возведение в степень")
         {
             BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedBottom(BenchmarkPlot.Plot.Axes.Left, 0));
-            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, 1000));
 
-            double[] times0 = LoadCsv(Path.Combine(res, "SimplePow_O_n_results.csv"));
-            double[] times0theor = LoadCsv(Path.Combine(res, "SimplePow_O_n_Teoreticalresults.csv"));
-            double[] times1 = LoadCsv(Path.Combine(res, "RecPow_O_logn_results.csv"));
-            double[] times1theor = LoadCsv(Path.Combine(res, "RecPow_O_logn_Teoreticalresults.csv"));
-            double[] times2 = LoadCsv(Path.Combine(res, "QuickPow_O_logn_results.csv"));
-            double[] times2theor = LoadCsv(Path.Combine(res, "QuickPow_O_logn_Teoreticalresults.csv"));
-            double[] times3 = LoadCsv(Path.Combine(res, "QuickPow1_O_logn_results.csv"));
-            double[] times3theor = LoadCsv(Path.Combine(res, "QuickPow1_O_logn_Teoreticalresults.csv"));
+            var (off0, per0, times0) = LoadCsvSignal(Path.Combine(res, "SimplePow_O_n_results.csv"), 10, 50);
+            var (_, _, times0theor) = LoadCsvSignal(Path.Combine(res, "SimplePow_O_n_Teoreticalresults.csv"), 10, 50);
+
+            var (off1, per1, times1) = LoadCsvSignal(Path.Combine(res, "RecursiveLinearPow_O_n_results.csv"), 10, 50);
+            var (_, _, times1theor) = LoadCsvSignal(Path.Combine(res, "RecursiveLinearPow_O_n_Teoreticalresults.csv"), 10, 50);
+
+            var (off2, per2, times2) = LoadCsvSignal(Path.Combine(res, "QuickPow_O_logn_results.csv"), 10, 50);
+            var (_, _, times2theor) = LoadCsvSignal(Path.Combine(res, "QuickPow_O_logn_Teoreticalresults.csv"), 10, 50);
 
             double[] times0null = new double[times0.Length];
             double[] times0theornull = new double[times0theor.Length];
@@ -240,28 +256,34 @@ public partial class MainWindow : Window
             double[] times1theornull = new double[times1theor.Length];
             double[] times2null = new double[times2.Length];
             double[] times2theornull = new double[times2theor.Length];
-            double[] times3null = new double[times3.Length];
-            double[] times3theornull = new double[times3theor.Length];
 
-            // Настройка лимитов камеры ДО анимации
-            double maxY = 0.1;
-            var allTimes = times0.Concat(times1).Concat(times2).Concat(times3)
-                                 .Concat(times0theor).Concat(times1theor).Concat(times2theor).Concat(times3theor).ToList();
+            double minX = Math.Min(off0, Math.Min(off1, off2));
+            double maxX = Math.Max(off0 + (times0.Length > 0 ? (times0.Length - 1) * per0 : 0),
+                          Math.Max(off1 + (times1.Length > 0 ? (times1.Length - 1) * per1 : 0),
+                                   off2 + (times2.Length > 0 ? (times2.Length - 1) * per2 : 0)));
+            if (maxX <= minX) maxX = minX + 1000;
+
+            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, minX));
+
+            // Настройка лимитов камеры ДО анимации (по оси Y отображаются шаги до 1000)
+            double maxY = 1000.0;
+            var allTimes = times0.Concat(times1).Concat(times2)
+                                 .Concat(times0theor).Concat(times1theor).Concat(times2theor).ToList();
             if (allTimes.Count > 0)
             {
                 maxY = allTimes.Max();
             }
-            BenchmarkPlot.Plot.Axes.SetLimits(1000, 100000, 0, Math.Max(0.01, maxY * 1.15));
+            BenchmarkPlot.Plot.Axes.SetLimits(minX, maxX, 0, Math.Max(10, maxY * 1.1));
 
-            // Сигналы для алгоритмов возведения в степень
+            // Сигналы для алгоритмов возведения в степень (подсчёт шагов)
             if (times0.Length > 0 && Card.SeriesList.Count > 0)
             {
                 var signal0 = BenchmarkPlot.Plot.Add.Signal(times0null);
-                signal0.Data.Period = 50; signal0.Data.XOffset = 1000;
+                signal0.Data.Period = per0; signal0.Data.XOffset = off0;
                 signal0.Color = Color.FromHex(Card.AlghorithmColor[0]); signal0.LineWidth = 1.5f;
 
                 var signal0theor = BenchmarkPlot.Plot.Add.Signal(times0theornull);
-                signal0theor.Data.Period = 50; signal0theor.Data.XOffset = 1000;
+                signal0theor.Data.Period = per0; signal0theor.Data.XOffset = off0;
                 signal0theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[0]); signal0theor.LineWidth = 1.5f;
 
                 WireSeries(Card.SeriesList[0], signal0, signal0theor);
@@ -270,11 +292,11 @@ public partial class MainWindow : Window
             if (times1.Length > 0 && Card.SeriesList.Count > 1)
             {
                 var signal1 = BenchmarkPlot.Plot.Add.Signal(times1null);
-                signal1.Data.Period = 50; signal1.Data.XOffset = 1000;
+                signal1.Data.Period = per1; signal1.Data.XOffset = off1;
                 signal1.Color = Color.FromHex(Card.AlghorithmColor[1]); signal1.LineWidth = 1.5f;
 
                 var signal1theor = BenchmarkPlot.Plot.Add.Signal(times1theornull);
-                signal1theor.Data.Period = 50; signal1theor.Data.XOffset = 1000;
+                signal1theor.Data.Period = per1; signal1theor.Data.XOffset = off1;
                 signal1theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[1]); signal1theor.LineWidth = 1.5f;
 
                 WireSeries(Card.SeriesList[1], signal1, signal1theor);
@@ -283,31 +305,17 @@ public partial class MainWindow : Window
             if (times2.Length > 0 && Card.SeriesList.Count > 2)
             {
                 var signal2 = BenchmarkPlot.Plot.Add.Signal(times2null);
-                signal2.Data.Period = 50; signal2.Data.XOffset = 1000;
+                signal2.Data.Period = per2; signal2.Data.XOffset = off2;
                 signal2.Color = Color.FromHex(Card.AlghorithmColor[2]); signal2.LineWidth = 1.5f;
 
                 var signal2theor = BenchmarkPlot.Plot.Add.Signal(times2theornull);
-                signal2theor.Data.Period = 50; signal2theor.Data.XOffset = 1000;
+                signal2theor.Data.Period = per2; signal2theor.Data.XOffset = off2;
                 signal2theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[2]); signal2theor.LineWidth = 1.5f;
 
                 WireSeries(Card.SeriesList[2], signal2, signal2theor);
             }
 
-            if (times3.Length > 0 && Card.SeriesList.Count > 3)
-            {
-                var signal3 = BenchmarkPlot.Plot.Add.Signal(times3null);
-                signal3.Data.Period = 50; signal3.Data.XOffset = 1000;
-                signal3.Color = Color.FromHex(Card.AlghorithmColor[3]); signal3.LineWidth = 1.5f;
-
-                var signal3theor = BenchmarkPlot.Plot.Add.Signal(times3theornull);
-                signal3theor.Data.Period = 50; signal3theor.Data.XOffset = 1000;
-                signal3theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[3]); signal3theor.LineWidth = 1.5f;
-
-                WireSeries(Card.SeriesList[3], signal3, signal3theor);
-            }
-
-            // Одновременная плавная анимация линий (1980 точек, обновляем каждые 25 точек)
-            int maxLen = Math.Max(times0.Length, Math.Max(times1.Length, Math.Max(times2.Length, times3.Length)));
+            int maxLen = Math.Max(times0.Length, Math.Max(times1.Length, times2.Length));
             for (int i = 0; i < maxLen; i++)
             {
                 if (i < times0.Length) times0null[i] = times0[i];
@@ -316,12 +324,10 @@ public partial class MainWindow : Window
                 if (i < times1theor.Length) times1theornull[i] = times1theor[i];
                 if (i < times2.Length) times2null[i] = times2[i];
                 if (i < times2theor.Length) times2theornull[i] = times2theor[i];
-                if (i < times3.Length) times3null[i] = times3[i];
-                if (i < times3theor.Length) times3theornull[i] = times3theor[i];
 
-                if (i % 25 == 0)
+                if (i % 2 == 0)
                 {
-                    await Task.Delay(15);
+                    await Task.Delay(20);
                     BenchmarkPlot.Refresh();
                 }
             }
@@ -665,7 +671,15 @@ public partial class MainWindow : Window
         {
             // 4. Запускаем бенчмарк (в фоновом потоке, чтобы окно не зависало)
             BenchmarkEngine engine = new BenchmarkEngine(nStart, nStop, step, repeats, algo);
-            List<double> results = await Task.Run(engine.AlgorithmTimer);
+            List<double> results;
+            if (_viewModel.SelectedCard.Title == "Возведение в степень")
+            {
+                results = await Task.Run(engine.AlgorithmCount);
+            }
+            else
+            {
+                results = await Task.Run(engine.AlgorithmTimer);
+            }
 
             // 4.1 Считаем теоретическую аппроксимацию (МНК) и сохраняем файл
             TheoreticalFitter fitter = new TheoreticalFitter(algo);
