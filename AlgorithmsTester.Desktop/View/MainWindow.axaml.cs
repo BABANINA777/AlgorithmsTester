@@ -521,6 +521,58 @@ public partial class MainWindow : Window
                 _activeCleanups.Add(() => series0.PropertyChanged -= handler);
             }
         }
+        else if (Card.Title == "Графы")
+        {
+            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedBottom(BenchmarkPlot.Plot.Axes.Left, 0));
+
+            var (off0, per0, times0) = LoadCsvSignal(Path.Combine(res, "Dijkstra_O_n2_results.csv"), 10, 50);
+            var (_, _, times0theor) = LoadCsvSignal(Path.Combine(res, "Dijkstra_O_n2_Teoreticalresults.csv"), 10, 50);
+
+            double[] times0null = new double[times0.Length];
+            double[] times0theornull = new double[times0theor.Length];
+
+            double minX = off0;
+            double maxX = off0 + (times0.Length > 0 ? (times0.Length - 1) * per0 : 0);
+            if (maxX <= minX) maxX = minX + 300;
+
+            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, minX));
+
+            // Настройка лимитов камеры ДО анимации
+            double maxY = 1.0;
+            var allTimes = times0.Concat(times0theor).ToList();
+            if (allTimes.Count > 0)
+            {
+                maxY = allTimes.Max();
+            }
+            BenchmarkPlot.Plot.Axes.SetLimits(minX, maxX, 0, Math.Max(0.01, maxY * 1.15));
+
+            if (times0.Length > 0 && Card.SeriesList.Count > 0)
+            {
+                var signal0 = BenchmarkPlot.Plot.Add.Signal(times0null);
+                signal0.Data.Period = per0; signal0.Data.XOffset = off0;
+                signal0.Color = Color.FromHex(Card.AlghorithmColor[0]); signal0.LineWidth = 1.5f;
+
+                var signal0theor = BenchmarkPlot.Plot.Add.Signal(times0theornull);
+                signal0theor.Data.Period = per0; signal0theor.Data.XOffset = off0;
+                signal0theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[0]); signal0theor.LineWidth = 1.5f;
+
+                WireSeries(Card.SeriesList[0], signal0, signal0theor);
+            }
+
+            int maxLen = Math.Max(times0.Length, times0theor.Length);
+            for (int i = 0; i < maxLen; i++)
+            {
+                if (i < times0.Length) times0null[i] = times0[i];
+                if (i < times0theor.Length) times0theornull[i] = times0theor[i];
+
+                if (i % 2 == 0)
+                {
+                    await Task.Delay(20);
+                    BenchmarkPlot.Refresh();
+                }
+            }
+            BenchmarkPlot.Refresh();
+        }
         else
         {
             BenchmarkPlot.Plot.Axes.AutoScale();
@@ -904,6 +956,7 @@ public partial class MainWindow : Window
 
         if (_viewModel?.SelectedCard?.Title == "Матричные операции")
         {
+            string seriesId = "history_" + item.Id;
             if (!item.IsDisplayed)
             {
                 var (nsList, msList, timeGrid) = DatabaseManager.GetRunPlotData3D(item.Id);
@@ -911,35 +964,25 @@ public partial class MainWindow : Window
                 {
                     int[] ns = nsList.ToArray();
                     int[] ms = msList.ToArray();
-                    double[,] theorGrid = ComputeTheoretical3DGrid(ns, ms, timeGrid);
-                    Matrix3DPlot.SetData(ns, ms, timeGrid, theorGrid);
+                    Matrix3DPlot.AddSeries(new Surface3DSeries
+                    {
+                        Id = seriesId,
+                        Title = item.DisplayText,
+                        NValues = ns,
+                        MValues = ms,
+                        Data = timeGrid,
+                        UseViridis = false,
+                        BaseColor = Avalonia.Media.Color.Parse("#EC4899"),
+                        LineWidth = 1.8,
+                        IsTheoretical = false,
+                        IsVisible = true
+                    });
                     item.IsDisplayed = true;
                 }
             }
             else
             {
-                string? empFile = FindResultFile("MatrixMultiplication_3D_results.csv");
-                string? theorFile = FindResultFile("MatrixMultiplication_3D_Teoreticalresults.csv");
-                var (ns, ms, empGrid) = empFile != null ? LoadMatrix3DCsv(empFile) : ([], [], new double[0, 0]);
-                double[,]? theorGrid = null;
-                if (theorFile != null && ns.Length > 0 && ms.Length > 0)
-                {
-                    var (_, _, thGrid) = LoadMatrix3DCsv(theorFile);
-                    if (thGrid.GetLength(0) == ns.Length && thGrid.GetLength(1) == ms.Length)
-                    {
-                        theorGrid = thGrid;
-                    }
-                }
-
-                if (theorGrid == null && ns.Length > 0 && ms.Length > 0)
-                {
-                    theorGrid = ComputeTheoretical3DGrid(ns, ms, empGrid);
-                }
-
-                if (ns.Length > 0 && ms.Length > 0)
-                {
-                    Matrix3DPlot.SetData(ns, ms, empGrid, theorGrid);
-                }
+                Matrix3DPlot.RemoveSeries(seriesId);
                 item.IsDisplayed = false;
             }
             UpdateHistoryButtonState();

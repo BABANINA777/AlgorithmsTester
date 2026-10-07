@@ -20,6 +20,7 @@
             <desktop:Card DataContext="{Binding Cards[2]}" Margin="15" />
             <desktop:Card DataContext="{Binding Cards[3]}" Margin="15" />
             <desktop:Card DataContext="{Binding Cards[4]}" Margin="15" />
+            <desktop:Card DataContext="{Binding Cards[5]}" Margin="15" />
         </WrapPanel>
         
         <!-- ЭКРАН 2: ГРАФИК -->

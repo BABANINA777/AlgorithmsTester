@@ -81,6 +81,16 @@ public partial class MainWindowViewModel : ObservableObject
             50, 300,
             ["#C084FC", "#F97316"],
             OpenCard));
+
+        // 6. Графы (Алгоритм Дейкстры)
+        Cards.Add(new AlgorithmCardViewModel(
+            "Графы",
+            ["Алгоритм Дейкстры"],
+            ["O(V²)"],
+            "#EC4899",
+            10, 300,
+            ["#F43F5E", "#FB923C"],
+            OpenCard));
     }
     
     // Метод: открыть таблицу по нажатию
