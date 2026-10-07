@@ -13,7 +13,7 @@ public class DijkstraAlgorithm : IAlgorithmTemplate
     public Array PrepareData(int n)
     {
         _verticesCount = n;
-        _graph = GenerateGraph(n);
+        _graph = DataGenerator.GenerateMatrix(n);
 
         return _graph;
     }
@@ -26,7 +26,7 @@ public class DijkstraAlgorithm : IAlgorithmTemplate
         Dijkstra(_graph, 0);
     }
 
-    private static double[,] GenerateGraph(int n)
+    /*private static double[,] GenerateGraph(int n)
     {
         Random random = new Random(42);
 
@@ -53,7 +53,7 @@ public class DijkstraAlgorithm : IAlgorithmTemplate
         }
 
         return graph;
-    }
+    }*/
 
     private static double[] Dijkstra(double[,] graph, int start)
     {

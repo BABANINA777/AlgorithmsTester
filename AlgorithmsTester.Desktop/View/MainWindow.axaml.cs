@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AlgorithmsTester.Core;
 using AlgorithmsTester.Core.Algorithm;
+using AlgorithmsTester.Desktop.Element;
 using AlgorithmsTester.Desktop.ViewMadels;
 using Avalonia.Controls;
 using ScottPlot;
@@ -79,6 +80,17 @@ public partial class MainWindow : Window
         NStopInput.Text = Card.DefaultEndN.ToString();
         RepeatsInput.Text = "5";
         UpdateHistoryButtonState();
+
+        if (Card.Title == "Матричные операции")
+        {
+            BenchmarkPlot.IsVisible = false;
+            Matrix3DPlot.IsVisible = true;
+        }
+        else
+        {
+            BenchmarkPlot.IsVisible = true;
+            Matrix3DPlot.IsVisible = false;
+        }
 
         string res = GetResultDir();
 
@@ -178,28 +190,34 @@ public partial class MainWindow : Window
             var (off1, per1, times1) = LoadCsvSignal(Path.Combine(res, "PolynomialHorner_O_n_results.csv"), 50, 50);
             var (_, _, times1theor) = LoadCsvSignal(Path.Combine(res, "PolynomialHorner_O_n_Teoreticalresults.csv"), 50, 50);
 
+            var (off2, per2, times2) = LoadCsvSignal(Path.Combine(res, "Karatsuba_O_n1_585_results.csv"), 50, 50);
+            var (_, _, times2theor) = LoadCsvSignal(Path.Combine(res, "Karatsuba_O_n1_585_Teoreticalresults.csv"), 50, 50);
+
             double[] times0null = new double[times0.Length];
             double[] times0theornull = new double[times0theor.Length];
             double[] times1null = new double[times1.Length];
             double[] times1theornull = new double[times1theor.Length];
+            double[] times2null = new double[times2.Length];
+            double[] times2theornull = new double[times2theor.Length];
 
-            double minX = Math.Min(off0, off1);
+            double minX = Math.Min(off0, Math.Min(off1, off2));
             double maxX = Math.Max(off0 + (times0.Length > 0 ? (times0.Length - 1) * per0 : 0),
-                                   off1 + (times1.Length > 0 ? (times1.Length - 1) * per1 : 0));
+                          Math.Max(off1 + (times1.Length > 0 ? (times1.Length - 1) * per1 : 0),
+                                   off2 + (times2.Length > 0 ? (times2.Length - 1) * per2 : 0)));
             if (maxX <= minX) maxX = minX + 2000;
 
             BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, minX));
 
             // Настройка лимитов камеры ДО анимации
             double maxY = 1.0;
-            var allTimes = times0.Concat(times1).Concat(times0theor).Concat(times1theor).ToList();
+            var allTimes = times0.Concat(times1).Concat(times2).Concat(times0theor).Concat(times1theor).Concat(times2theor).ToList();
             if (allTimes.Count > 0)
             {
                 maxY = allTimes.Max();
             }
             BenchmarkPlot.Plot.Axes.SetLimits(minX, maxX, 0, Math.Max(0.01, maxY * 1.15));
 
-            // Сигналы для 2 алгоритмов полинома (Прямой/Наивный и Метод Горнера)
+            // Сигналы для 3 алгоритмов (Прямой/Наивный, Метод Горнера, Карацуба)
             var signal0 = BenchmarkPlot.Plot.Add.Signal(times0null);
             signal0.Data.Period = per0; signal0.Data.XOffset = off0;
             signal0.Color = Color.FromHex(Card.AlghorithmColor[0]); signal0.LineWidth = 1.5f;
@@ -216,18 +234,32 @@ public partial class MainWindow : Window
             signal1theor.Data.Period = per1; signal1theor.Data.XOffset = off1;
             signal1theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[1]); signal1theor.LineWidth = 1.5f;
 
-            // Связка с кнопками (серия 0 и 1)
+            var signal2 = BenchmarkPlot.Plot.Add.Signal(times2null);
+            signal2.Data.Period = per2; signal2.Data.XOffset = off2;
+            signal2.Color = Color.FromHex(Card.AlghorithmColor[2]); signal2.LineWidth = 1.5f;
+
+            var signal2theor = BenchmarkPlot.Plot.Add.Signal(times2theornull);
+            signal2theor.Data.Period = per2; signal2theor.Data.XOffset = off2;
+            signal2theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[2]); signal2theor.LineWidth = 1.5f;
+
+            // Связка с кнопками (серия 0, 1, 2)
             WireSeries(Card.SeriesList[0], signal0, signal0theor);
             WireSeries(Card.SeriesList[1], signal1, signal1theor);
+            if (Card.SeriesList.Count > 2)
+            {
+                WireSeries(Card.SeriesList[2], signal2, signal2theor);
+            }
 
-            // Одновременная плавная анимация (в полиномах ~40 точек, обновляем каждые 2 точки)
-            int maxLen = Math.Max(times0.Length, times1.Length);
+            // Одновременная плавная анимация
+            int maxLen = Math.Max(times0.Length, Math.Max(times1.Length, times2.Length));
             for (int i = 0; i < maxLen; i++)
             {
                 if (i < times0.Length) times0null[i] = times0[i];
                 if (i < times0theor.Length) times0theornull[i] = times0theor[i];
                 if (i < times1.Length) times1null[i] = times1[i];
                 if (i < times1theor.Length) times1theornull[i] = times1theor[i];
+                if (i < times2.Length) times2null[i] = times2[i];
+                if (i < times2theor.Length) times2theornull[i] = times2theor[i];
 
                 if (i % 2 == 0)
                 {
@@ -430,95 +462,64 @@ public partial class MainWindow : Window
         }
         else if (Card.Title == "Матричные операции")
         {
-            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedBottom(BenchmarkPlot.Plot.Axes.Left, 0));
+            string? empPath = FindResultFile("MatrixMultiplication_3D_results.csv");
+            string? theorPath = FindResultFile("MatrixMultiplication_3D_Teoreticalresults.csv");
 
-            var (off0, per0, times0) = LoadCsvSignal(Path.Combine(res, "MatrixMultiplication_O_n3_results.csv"), 10, 50);
-            var (_, _, times0theor) = LoadCsvSignal(Path.Combine(res, "MatrixMultiplication_O_n3_Teoreticalresults.csv"), 10, 50);
+            int[] ns = [];
+            int[] ms = [];
+            double[,] empGrid = new double[0, 0];
+            double[,]? theorGrid = null;
 
-            var (off1, per1, times1) = LoadCsvSignal(Path.Combine(res, "Karatsuba_O_n1_585_results.csv"), 10, 50);
-            var (_, _, times1theor) = LoadCsvSignal(Path.Combine(res, "Karatsuba_O_n1_585_Teoreticalresults.csv"), 10, 50);
-
-            var (off2, per2, times2) = LoadCsvSignal(Path.Combine(res, "Dijkstra_O_n2_results.csv"), 10, 50);
-            var (_, _, times2theor) = LoadCsvSignal(Path.Combine(res, "Dijkstra_O_n2_Teoreticalresults.csv"), 10, 50);
-
-            double[] times0null = new double[times0.Length];
-            double[] times0theornull = new double[times0theor.Length];
-            double[] times1null = new double[times1.Length];
-            double[] times1theornull = new double[times1theor.Length];
-            double[] times2null = new double[times2.Length];
-            double[] times2theornull = new double[times2theor.Length];
-
-            double minX = Math.Min(off0, Math.Min(off1, off2));
-            double maxX = Math.Max(off0 + (times0.Length > 0 ? (times0.Length - 1) * per0 : 0),
-                          Math.Max(off1 + (times1.Length > 0 ? (times1.Length - 1) * per1 : 0),
-                                   off2 + (times2.Length > 0 ? (times2.Length - 1) * per2 : 0)));
-            if (maxX <= minX) maxX = minX + 300;
-
-            BenchmarkPlot.Plot.Axes.Rules.Add(new ScottPlot.AxisRules.LockedLeft(BenchmarkPlot.Plot.Axes.Bottom, minX));
-
-            // Настройка лимитов камеры ДО анимации
-            double maxY = 1.0;
-            var allTimes = times0.Concat(times1).Concat(times2)
-                                 .Concat(times0theor).Concat(times1theor).Concat(times2theor).ToList();
-            if (allTimes.Count > 0)
+            if (empPath != null)
             {
-                maxY = allTimes.Max();
-            }
-            BenchmarkPlot.Plot.Axes.SetLimits(minX, maxX, 0, Math.Max(0.01, maxY * 1.15));
-
-            if (times0.Length > 0 && Card.SeriesList.Count > 0)
-            {
-                var signal0 = BenchmarkPlot.Plot.Add.Signal(times0null);
-                signal0.Data.Period = per0; signal0.Data.XOffset = off0;
-                signal0.Color = Color.FromHex(Card.AlghorithmColor[0]); signal0.LineWidth = 1.5f;
-
-                var signal0theor = BenchmarkPlot.Plot.Add.Signal(times0theornull);
-                signal0theor.Data.Period = per0; signal0theor.Data.XOffset = off0;
-                signal0theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[0]); signal0theor.LineWidth = 1.5f;
-
-                WireSeries(Card.SeriesList[0], signal0, signal0theor);
+                (ns, ms, empGrid) = LoadMatrix3DCsv(empPath);
             }
 
-            if (times1.Length > 0 && Card.SeriesList.Count > 1)
+            if (theorPath != null && ns.Length > 0 && ms.Length > 0)
             {
-                var signal1 = BenchmarkPlot.Plot.Add.Signal(times1null);
-                signal1.Data.Period = per1; signal1.Data.XOffset = off1;
-                signal1.Color = Color.FromHex(Card.AlghorithmColor[1]); signal1.LineWidth = 1.5f;
-
-                var signal1theor = BenchmarkPlot.Plot.Add.Signal(times1theornull);
-                signal1theor.Data.Period = per1; signal1theor.Data.XOffset = off1;
-                signal1theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[1]); signal1theor.LineWidth = 1.5f;
-
-                WireSeries(Card.SeriesList[1], signal1, signal1theor);
+                var (_, _, thGrid) = LoadMatrix3DCsv(theorPath);
+                if (thGrid.GetLength(0) == ns.Length && thGrid.GetLength(1) == ms.Length)
+                {
+                    theorGrid = thGrid;
+                }
             }
 
-            if (times2.Length > 0 && Card.SeriesList.Count > 2)
+            // Привязка теоретической аппроксимации (МНК) к реальным результатам замеров
+            if (theorGrid == null && ns.Length > 0 && ms.Length > 0)
             {
-                var signal2 = BenchmarkPlot.Plot.Add.Signal(times2null);
-                signal2.Data.Period = per2; signal2.Data.XOffset = off2;
-                signal2.Color = Color.FromHex(Card.AlghorithmColor[2]); signal2.LineWidth = 1.5f;
-
-                var signal2theor = BenchmarkPlot.Plot.Add.Signal(times2theornull);
-                signal2theor.Data.Period = per2; signal2theor.Data.XOffset = off2;
-                signal2theor.Color = Color.FromHex(Card.Theoretical_AlghorithmColor[2]); signal2theor.LineWidth = 1.5f;
-
-                WireSeries(Card.SeriesList[2], signal2, signal2theor);
+                theorGrid = ComputeTheoretical3DGrid(ns, ms, empGrid);
             }
 
-            int maxLen = Math.Max(times0.Length, Math.Max(times1.Length, times2.Length));
-            for (int i = 0; i < maxLen; i++)
+            if (ns.Length > 0 && ms.Length > 0)
             {
-                if (i < times0.Length) times0null[i] = times0[i];
-                if (i < times0theor.Length) times0theornull[i] = times0theor[i];
-                if (i < times1.Length) times1null[i] = times1[i];
-                if (i < times1theor.Length) times1theornull[i] = times1theor[i];
-                if (i < times2.Length) times2null[i] = times2[i];
-                if (i < times2theor.Length) times2theornull[i] = times2theor[i];
-
-                await Task.Delay(40);
-                BenchmarkPlot.Refresh();
+                Matrix3DPlot.SetData(ns, ms, empGrid, theorGrid);
+                NStartInput.Text = ns[0].ToString();
+                NStopInput.Text = ns[^1].ToString();
             }
-            BenchmarkPlot.Refresh();
+
+            if (Card.SeriesList.Count > 0)
+            {
+                var series0 = Card.SeriesList[0];
+                Matrix3DPlot.ShowEmpirical = series0.IsEnabled;
+                Matrix3DPlot.ShowTheoretical = series0.IsTheoreticalEnabled;
+                Matrix3DPlot.InvalidateVisual();
+
+                PropertyChangedEventHandler handler = (object? s, PropertyChangedEventArgs e) =>
+                {
+                    if (e.PropertyName == nameof(AlgorithmSeriesItem.IsEnabled))
+                    {
+                        Matrix3DPlot.ShowEmpirical = series0.IsEnabled;
+                        Matrix3DPlot.InvalidateVisual();
+                    }
+                    else if (e.PropertyName == nameof(AlgorithmSeriesItem.IsTheoreticalEnabled))
+                    {
+                        Matrix3DPlot.ShowTheoretical = series0.IsTheoreticalEnabled;
+                        Matrix3DPlot.InvalidateVisual();
+                    }
+                };
+                series0.PropertyChanged += handler;
+                _activeCleanups.Add(() => series0.PropertyChanged -= handler);
+            }
         }
         else
         {
@@ -576,6 +577,115 @@ public partial class MainWindow : Window
             return coreDir;
 
         return Path.Combine(Directory.GetCurrentDirectory(), "Result");
+    }
+
+    private static string? FindResultFile(string fileName)
+    {
+        string[] candidates = new[]
+        {
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Result", fileName),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\Result", fileName),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\AlgorithmsTester.Desktop\Result", fileName),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\AlgorithmsTester.Core\bin\Debug\net10.0\Result", fileName),
+            Path.Combine(Directory.GetCurrentDirectory(), "Result", fileName),
+            Path.Combine(Directory.GetCurrentDirectory(), "AlgorithmsTester.Desktop", "Result", fileName),
+        };
+
+        foreach (var path in candidates)
+        {
+            try
+            {
+                string fullPath = Path.GetFullPath(path);
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static double[,] ComputeTheoretical3DGrid(int[] ns, int[] ms, double[,] empGrid)
+    {
+        int nPoints = ns.Length;
+        int mPoints = ms.Length;
+        double[,] theorGrid = new double[nPoints, mPoints];
+
+        double sumNumerator = 0.0;
+        double sumDenominator = 0.0;
+
+        for (int i = 0; i < nPoints; i++)
+        {
+            for (int j = 0; j < mPoints; j++)
+            {
+                double ops = (double)ns[i] * ms[j];
+                double t = empGrid[i, j];
+                sumNumerator += t * ops;
+                sumDenominator += ops * ops;
+            }
+        }
+
+        double coeff = sumDenominator > 0 ? sumNumerator / sumDenominator : 0.0;
+
+        for (int i = 0; i < nPoints; i++)
+        {
+            for (int j = 0; j < mPoints; j++)
+            {
+                theorGrid[i, j] = coeff * ns[i] * ms[j];
+            }
+        }
+
+        return theorGrid;
+    }
+
+    private static (int[] ns, int[] ms, double[,] grid) LoadMatrix3DCsv(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return ([], [], new double[0, 0]);
+
+        var rows = new List<(int n, int m, double time)>();
+        var nSet = new SortedSet<int>();
+        var mSet = new SortedSet<int>();
+
+        foreach (string rawLine in File.ReadLines(path).Skip(1))
+        {
+            string line = rawLine.Trim();
+            if (string.IsNullOrEmpty(line)) continue;
+
+            string[] parts = line.Contains(';') ? line.Split(';') : line.Split(',');
+            if (parts.Length >= 3)
+            {
+                if (int.TryParse(parts[0].Trim(), out int n) && int.TryParse(parts[1].Trim(), out int m))
+                {
+                    string timeStr = (parts.Length >= 4 ? parts[3] : parts[2]).Trim().Replace(',', '.');
+                    if (double.TryParse(timeStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double time))
+                    {
+                        rows.Add((n, m, time));
+                        nSet.Add(n);
+                        mSet.Add(m);
+                    }
+                }
+            }
+        }
+
+        var nList = nSet.ToArray();
+        var mList = mSet.ToArray();
+        if (nList.Length == 0 || mList.Length == 0) return ([], [], new double[0, 0]);
+
+        double[,] grid = new double[nList.Length, mList.Length];
+        var nIndexMap = nList.Select((val, idx) => (val, idx)).ToDictionary(x => x.val, x => x.idx);
+        var mIndexMap = mList.Select((val, idx) => (val, idx)).ToDictionary(x => x.val, x => x.idx);
+
+        foreach (var r in rows)
+        {
+            if (nIndexMap.TryGetValue(r.n, out int i) && mIndexMap.TryGetValue(r.m, out int j))
+            {
+                grid[i, j] = r.time;
+            }
+        }
+
+        return (nList, mList, grid);
     }
 
     private void WireSeries(AlgorithmSeriesItem series, ScottPlot.Plottables.Signal signal, ScottPlot.Plottables.Signal signalTheor)
@@ -669,31 +779,68 @@ public partial class MainWindow : Window
 
         try
         {
-            // 4. Запускаем бенчмарк (в фоновом потоке, чтобы окно не зависало)
             BenchmarkEngine engine = new BenchmarkEngine(nStart, nStop, step, repeats, algo);
-            List<double> results;
-            if (_viewModel.SelectedCard.Title == "Возведение в степень")
+            long expId;
+            if (_viewModel.SelectedCard.Title == "Матричные операции")
             {
-                results = await Task.Run(engine.AlgorithmCount);
+                // Запускаем 3D матричный бенчмарк в фоновом потоке
+                double[,] matrixResults = await Task.Run(() => engine.AlgorithmMatrixTimer(nStart, nStop, step));
+
+                // Сохраняем в базу данных и CSV
+                expId = DatabaseManager.SaveExperimentRun(
+                    _viewModel.SelectedCard.Title,
+                    algo,
+                    nStart,
+                    nStop,
+                    nStart,
+                    nStop,
+                    step,
+                    repeats,
+                    matrixResults);
+
+                // Создаем координатные сетки напрямую из параметров текущего прогона
+                int nPoints = (nStop - nStart) / step + 1;
+                int[] ns = new int[nPoints];
+                for (int i = 0; i < nPoints; i++) ns[i] = nStart + i * step;
+
+                int[] ms = new int[nPoints];
+                for (int j = 0; j < nPoints; j++) ms[j] = nStart + j * step;
+
+                // Вычисляем теоретическую поверхность (3D МНК) прямо по свежим замерам
+                double[,] theorGrid = ComputeTheoretical3DGrid(ns, ms, matrixResults);
+
+                // Мгновенно передаем новые результаты в 3D контрол для отображения
+                Matrix3DPlot.SetData(ns, ms, matrixResults, theorGrid);
             }
             else
             {
-                results = await Task.Run(engine.AlgorithmTimer);
+                List<double> results;
+                if (_viewModel.SelectedCard.Title == "Возведение в степень")
+                {
+                    results = await Task.Run(engine.AlgorithmCount);
+                }
+                else
+                {
+                    results = await Task.Run(engine.AlgorithmTimer);
+                }
+
+                // 4.1 Считаем теоретическую аппроксимацию (МНК) и сохраняем файл
+                TheoreticalFitter fitter = new TheoreticalFitter(algo);
+                fitter.TeoreticalAlgorithmTimer(nStart, nStop, results, step);
+
+                // 5. Сохраняем в базу данных SQLite
+                expId = DatabaseManager.SaveExperimentRun(
+                    _viewModel.SelectedCard.Title,
+                    algo,
+                    nStart,
+                    nStop,
+                    step,
+                    repeats,
+                    results);
+
+                // 5.1 Мгновенно обновляем 2D график для отображения результатов прогона
+                ShowGrafic(_viewModel.SelectedCard);
             }
-
-            // 4.1 Считаем теоретическую аппроксимацию (МНК) и сохраняем файл
-            TheoreticalFitter fitter = new TheoreticalFitter(algo);
-            fitter.TeoreticalAlgorithmTimer(nStart, nStop, results, step);
-
-            // 5. Сохраняем в базу данных SQLite
-            long expId = DatabaseManager.SaveExperimentRun(
-                _viewModel.SelectedCard.Title,
-                algo,
-                nStart,
-                nStop,
-                step,
-                repeats,
-                results);
 
             // 6. Добавляем в историю в MVVM (сразу появится в выпадающем списке)
             RunHistoryItem newItem = new RunHistoryItem();
@@ -747,12 +894,55 @@ public partial class MainWindow : Window
         UpdateHistoryButtonState();
     }
 
-    // Обработчик нажатия на кнопку "Показать / Скрыть"
     private void LoadHistoryButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         RunHistoryItem? item = HistoryRunsSelector.SelectedItem as RunHistoryItem;
         if (item == null)
         {
+            return;
+        }
+
+        if (_viewModel?.SelectedCard?.Title == "Матричные операции")
+        {
+            if (!item.IsDisplayed)
+            {
+                var (nsList, msList, timeGrid) = DatabaseManager.GetRunPlotData3D(item.Id);
+                if (nsList.Count > 0 && msList.Count > 0)
+                {
+                    int[] ns = nsList.ToArray();
+                    int[] ms = msList.ToArray();
+                    double[,] theorGrid = ComputeTheoretical3DGrid(ns, ms, timeGrid);
+                    Matrix3DPlot.SetData(ns, ms, timeGrid, theorGrid);
+                    item.IsDisplayed = true;
+                }
+            }
+            else
+            {
+                string? empFile = FindResultFile("MatrixMultiplication_3D_results.csv");
+                string? theorFile = FindResultFile("MatrixMultiplication_3D_Teoreticalresults.csv");
+                var (ns, ms, empGrid) = empFile != null ? LoadMatrix3DCsv(empFile) : ([], [], new double[0, 0]);
+                double[,]? theorGrid = null;
+                if (theorFile != null && ns.Length > 0 && ms.Length > 0)
+                {
+                    var (_, _, thGrid) = LoadMatrix3DCsv(theorFile);
+                    if (thGrid.GetLength(0) == ns.Length && thGrid.GetLength(1) == ms.Length)
+                    {
+                        theorGrid = thGrid;
+                    }
+                }
+
+                if (theorGrid == null && ns.Length > 0 && ms.Length > 0)
+                {
+                    theorGrid = ComputeTheoretical3DGrid(ns, ms, empGrid);
+                }
+
+                if (ns.Length > 0 && ms.Length > 0)
+                {
+                    Matrix3DPlot.SetData(ns, ms, empGrid, theorGrid);
+                }
+                item.IsDisplayed = false;
+            }
+            UpdateHistoryButtonState();
             return;
         }
 

@@ -31,7 +31,7 @@ public class DatabaseManager
         return builder.ConnectionString;
     }
 
-    // ВОТ САМ МЕТОД: принимает параметры эксперимента и массив результатов
+    // принимает параметры эксперимента и результаты. Создает .cvs
     public static long SaveExperimentRun(
         string groupName,
         IAlgorithmTemplate algorithm,
@@ -98,7 +98,209 @@ public class DatabaseManager
         return experimentId;
     }
 
-    // Получение списка всех сохраненных прогонов для конкретной группы (карточки)
+    //сохраняет результат матрицы
+    public static long SaveExperimentRun(
+        string groupName,
+        IAlgorithmTemplate algorithm,
+        int nStart,
+        int nStop,
+        int mStart,
+        int mStop,
+        int step,
+        int repeats,
+        double[,] results)
+    {
+        string connectionString = GetConnectionString();
+        long experimentId = 0;
+
+        using (SqliteConnection connection = new SqliteConnection(connectionString))
+        {
+            connection.Open();
+
+            // Открываем транзакцию для быстрой пакетной вставки всех точек
+            using (SqliteTransaction transaction = connection.BeginTransaction())
+            {
+                // 1. Записываем сам эксперимент в таблицу Experiments
+                using (SqliteCommand command = connection.CreateCommand())
+                {
+                    command.Transaction = transaction;
+                    command.CommandText = @"
+                        INSERT INTO Experiments (GroupName, AlgorithmName, ExperimentDate, NStart, NStop, Step, RunsCount)
+                        VALUES (@group, @algo, @date, @nStart, @nStop, @step, @runs);
+                        SELECT last_insert_rowid();";
+                    command.Parameters.AddWithValue("@group", groupName);
+                    command.Parameters.AddWithValue("@algo", algorithm.Name);
+                    command.Parameters.AddWithValue("@date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    command.Parameters.AddWithValue("@nStart", nStart);
+                    command.Parameters.AddWithValue("@nStop", nStop);
+                    command.Parameters.AddWithValue("@step", step);
+                    command.Parameters.AddWithValue("@runs", repeats);
+
+                    object? result = command.ExecuteScalar();
+                    experimentId = Convert.ToInt64(result);
+                }
+
+                // 2. В цикле записываем все точки замеров (N, M, время) в таблицу Measurements
+                using (SqliteCommand command = connection.CreateCommand())
+                {
+                    command.Transaction = transaction;
+                    command.CommandText = @"
+                        INSERT INTO Measurements (ExperimentId, N, RunNumber, ElapsedTimeMs, StepCount)
+                        VALUES (@expId, @n, @m, @time, @m);";
+
+                    command.Parameters.Add("@expId", SqliteType.Integer);
+                    command.Parameters.Add("@n", SqliteType.Integer);
+                    command.Parameters.Add("@m", SqliteType.Integer);
+                    command.Parameters.Add("@time", SqliteType.Real);
+
+                    command.Parameters["@expId"].Value = experimentId;
+
+                    int nPoints = results.GetLength(0);
+                    int mPoints = results.GetLength(1);
+
+                    for (int i = 0; i < nPoints; i++)
+                    {
+                        int currentN = nStart + i * step;
+                        command.Parameters["@n"].Value = currentN;
+
+                        for (int j = 0; j < mPoints; j++)
+                        {
+                            int currentM = mStart + j * step;
+                            command.Parameters["@m"].Value = currentM;
+                            command.Parameters["@time"].Value = results[i, j];
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                // Фиксируем транзакцию
+                transaction.Commit();
+            }
+        }
+
+        // 3. Сохраняем в CSV файл в папку Result
+        string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Result");
+        Directory.CreateDirectory(folderPath);
+
+        string fileName = $"{algorithm.Name}_3D_results.csv";
+        string fullPath = Path.Combine(folderPath, fileName);
+
+        using (StreamWriter file = new StreamWriter(fullPath))
+        {
+            file.WriteLine("N;M;TimeMs");
+
+            int nPoints = results.GetLength(0);
+            int mPoints = results.GetLength(1);
+
+            for (int i = 0; i < nPoints; i++)
+            {
+                int currentN = nStart + i * step;
+                for (int j = 0; j < mPoints; j++)
+                {
+                    int currentM = mStart + j * step;
+                    file.WriteLine($"{currentN};{currentM};{results[i, j].ToString("F6", System.Globalization.CultureInfo.InvariantCulture)}");
+                }
+            }
+        }
+
+        // 4. Сохраняем теоретическую аппроксимацию (3D МНК)
+        double sumNumerator = 0.0;
+        double sumDenominator = 0.0;
+        int nTotal = results.GetLength(0);
+        int mTotal = results.GetLength(1);
+
+        for (int i = 0; i < nTotal; i++)
+        {
+            int currentN = nStart + i * step;
+            for (int j = 0; j < mTotal; j++)
+            {
+                int currentM = mStart + j * step;
+                double ops = (double)currentN * currentM;
+                double t = results[i, j];
+                sumNumerator += t * ops;
+                sumDenominator += ops * ops;
+            }
+        }
+
+        double cCoeff = sumDenominator > 0 ? sumNumerator / sumDenominator : 0.0;
+        string theorFileName = $"{algorithm.Name}_3D_Teoreticalresults.csv";
+        string theorFullPath = Path.Combine(folderPath, theorFileName);
+
+        using (StreamWriter theorFile = new StreamWriter(theorFullPath))
+        {
+            theorFile.WriteLine("N;M;TimeMs");
+
+            for (int i = 0; i < nTotal; i++)
+            {
+                int currentN = nStart + i * step;
+                for (int j = 0; j < mTotal; j++)
+                {
+                    int currentM = mStart + j * step;
+                    double theorTime = cCoeff * currentN * currentM;
+                    theorFile.WriteLine($"{currentN};{currentM};{theorTime.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)}");
+                }
+            }
+        }
+
+        return experimentId;
+    }
+
+    // Получение координат (N, M и время) для построения 3D графика по ID эксперимента
+    public static (List<int> ns, List<int> ms, double[,] times) GetRunPlotData3D(long experimentId)
+    {
+        string connectionString = GetConnectionString();
+        var points = new List<(int n, int m, double time)>();
+        var nSet = new SortedSet<int>();
+        var mSet = new SortedSet<int>();
+
+        using (SqliteConnection connection = new SqliteConnection(connectionString))
+        {
+            connection.Open();
+
+            using (SqliteCommand command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT N, RunNumber, ElapsedTimeMs
+                    FROM Measurements
+                    WHERE ExperimentId = @expId
+                    ORDER BY N ASC, RunNumber ASC;";
+
+                command.Parameters.AddWithValue("@expId", experimentId);
+
+                using (SqliteDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int n = reader.GetInt32(0);
+                        int m = reader.GetInt32(1);
+                        double time = reader.GetDouble(2);
+
+                        points.Add((n, m, time));
+                        nSet.Add(n);
+                        mSet.Add(m);
+                    }
+                }
+            }
+        }
+
+        var nList = nSet.ToList();
+        var mList = mSet.ToList();
+        double[,] timeGrid = new double[nList.Count, mList.Count];
+
+        for (int p = 0; p < points.Count; p++)
+        {
+            int nIdx = nList.IndexOf(points[p].n);
+            int mIdx = mList.IndexOf(points[p].m);
+            if (nIdx >= 0 && mIdx >= 0)
+            {
+                timeGrid[nIdx, mIdx] = points[p].time;
+            }
+        }
+
+        return (nList, mList, timeGrid);
+    }
+
+    // Получение списка всех сохраненных прогонов для конкретной группы (карточки) из бд
     public static List<RunHistoryItem> GetHistoryRuns(string groupName)
     {
         List<RunHistoryItem> list = new List<RunHistoryItem>();

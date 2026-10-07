@@ -8,7 +8,7 @@ public class Programm
 {
     public static void Main(string[] args)
     {
-        int nstart = 80000;
+        /*int nstart = 80000;
         int nstop = 100000;
         int steps = 50;
         int repeats = 1;
@@ -38,8 +38,38 @@ public class Programm
         
         //DatabaseManager.SaveExperimentRun("Вектор", algorithm,nstart, nstop, steps, repeats, realtime);
         //CreateTable();
+        */
+        
+        // Параметры для матричного умножения (3D сетка по n и m)
+        int nstart = 50;
+        int nstop = 300;
+        int mstart = 50;
+        int mstop = 300;
+        int steps = 50;
+        int repeats = 3;
+
+        var algorithm = new MatrixMultiplicationAlgorithm();
+        var benchmark = new BenchmarkEngine(nstart, nstop, steps, repeats, algorithm);
+
+        Console.WriteLine($"Запуск 3D-бенчмарка матриц: N от {nstart} до {nstop}, M от {mstart} до {mstop}, шаг {steps}...");
+        double[,] results3D = benchmark.AlgorithmMatrixTimer(mstart, mstop, steps);
+
+        Console.WriteLine($"Замеры завершены. Сохранение в базу данных и CSV...");
+        long expId = DatabaseManager.SaveExperimentRun(
+            "Матричные операции",
+            algorithm,
+            nstart,
+            nstop,
+            mstart,
+            mstop,
+            steps,
+            repeats,
+            results3D);
+
+        Console.WriteLine($"Эксперимент успешно сохранён в БД (ID: {expId}) и в папку Result!");
     }
 
+    //метод чтоб сделать SQL таблицу
     public static async void CreateTable()
     {
         // 1. Формируем строку подключения (файл создастся рядом с .exe)

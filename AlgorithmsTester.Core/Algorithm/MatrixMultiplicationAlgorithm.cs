@@ -1,4 +1,4 @@
-﻿namespace AlgorithmsTester.Core.Algorithm;
+namespace AlgorithmsTester.Core.Algorithm;
 
 public class MatrixMultiplicationAlgorithm : IAlgorithmTemplate
 {
@@ -10,8 +10,13 @@ public class MatrixMultiplicationAlgorithm : IAlgorithmTemplate
 
     public Array PrepareData(int n)
     {
-        _matrixA = DataGenerator.GenerateMatrix(n);
-        _matrixB = DataGenerator.GenerateMatrix(n);
+        return PrepareData(n, n, n);
+    }
+
+    public Array PrepareData(int n, int m, int k)
+    {
+        _matrixA = DataGenerator.GenerateMatrix(n, k);
+        _matrixB = DataGenerator.GenerateMatrix(k, m);
 
         return _matrixA;
     }
@@ -26,16 +31,19 @@ public class MatrixMultiplicationAlgorithm : IAlgorithmTemplate
 
     private static double[,] Multiply(double[,] a, double[,] b)
     {
-        int n = a.GetLength(0);
-        double[,] result = new double[n, n];
+        int rowsA = a.GetLength(0);
+        int colsA = a.GetLength(1);
+        int colsB = b.GetLength(1);
 
-        for (int i = 0; i < n; i++)
+        double[,] result = new double[rowsA, colsB];
+
+        for (int i = 0; i < rowsA; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (int j = 0; j < colsB; j++)
             {
                 double sum = 0;
 
-                for (int k = 0; k < n; k++)
+                for (int k = 0; k < colsA; k++)
                 {
                     sum += a[i, k] * b[k, j];
                 }

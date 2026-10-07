@@ -21,10 +21,15 @@ public class DataGenerator
 
     public static double[,] GenerateMatrix(int n)
     {
-        double[,] matrix = new double[n, n];
-        for (int i=0; i < n; i++)
+        return GenerateMatrix(n, n);
+    }
+
+    public static double[,] GenerateMatrix(int rows, int cols)
+    {
+        double[,] matrix = new double[rows, cols];
+        for (int i = 0; i < rows; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (int j = 0; j < cols; j++)
             {
                 matrix[i, j] = RandomDouble(1000, 10_000);
             }
