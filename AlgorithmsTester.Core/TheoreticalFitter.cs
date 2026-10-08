@@ -14,9 +14,9 @@ public class TheoreticalFitter
         return _template.Complexity switch
         {
             Complexity.O_1 => 1.0,
-            Complexity.O_logn => Math.Log2(n),
+            Complexity.O_logn => n <= 1.0 ? 0.0 : Math.Log2(n),
             Complexity.O_n => n,
-            Complexity.O_n_logn => n * Math.Log2(n),
+            Complexity.O_n_logn => n <= 1.0 ? 0.0 : n * Math.Log2(n),
             Complexity.O_n1_585 => Math.Pow(n, 1.585),
             Complexity.O_n2 => n * n,
             Complexity.O_n3 => n * n * n,
@@ -43,7 +43,7 @@ public class TheoreticalFitter
         // Расчёт MSE и запись в CSV
         string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Result");
         Directory.CreateDirectory(folderPath);
-        string fileName = $"{_template.Name}_{_template.Complexity}_Teoreticalresults.csv";
+        string fileName = string.Format("{0}_{1}_Teoreticalresults.csv", _template.Name, _template.Complexity);
         string fullPath = Path.Combine(folderPath, fileName);
 
         double sumSquaredErrors = 0;
@@ -59,7 +59,7 @@ public class TheoreticalFitter
                 double diff = realTimes[i] - tTeor;
                 sumSquaredErrors += diff * diff;
 
-                file.WriteLine($"{n};{tTeor.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)}");
+                file.WriteLine(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0};{1:F8}", n, tTeor));
                 n += step;
             }
         }

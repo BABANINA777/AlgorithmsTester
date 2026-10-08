@@ -38,7 +38,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["Константа", "Сумма", "Произведение"],
             ["O(1)", "O(n)", "O(n)"],
             "#5B8FB9",
-            80000, 100000,
+            0, 100000,
             ["#38BDF8", "#2563EB", "#1E3A8A", "#FDBA74", "#F97316", "#C2410C"],
             OpenCard));
 
@@ -48,7 +48,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["Прямой (наивный)", "Метод Горнера", "Алгоритм Карацубы"],
             ["O(n²)", "O(n)", "O(n^1.585)"],
             "#10B981",
-            50, 2000,
+            0, 2000,
             ["#34D399", "#059669", "#38BDF8", "#FDBA74", "#EA580C", "#0284C7"],
             OpenCard));
 
@@ -58,7 +58,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["Простой", "Рекурсивный", "Быстрый бинарный"],
             ["O(n)", "O(n)", "O(log n)"],
             "#F59E0B",
-            10, 1000,
+            0, 1000,
             ["#FACC15", "#FB923C", "#38BDF8", "#CA8A04", "#C2410C", "#0284C7"],
             OpenCard));
 
@@ -68,7 +68,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["Пузырьковая", "Быстрая (QuickSort)", "Timsort"],
             ["O(n²)", "O(n log n)", "O(n log n)"],
             "#EF4444",
-            2000, 5000,
+            0, 5000,
             ["#F87171", "#DC2626", "#991B1B", "#FDBA74", "#F97316", "#C2410C"],
             OpenCard));
 
@@ -88,7 +88,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["Алгоритм Дейкстры"],
             ["O(V²)"],
             "#EC4899",
-            10, 300,
+            0, 300,
             ["#F43F5E", "#FB923C"],
             OpenCard));
     }

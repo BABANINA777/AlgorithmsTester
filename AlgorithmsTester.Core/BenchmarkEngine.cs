@@ -45,7 +45,7 @@ public class BenchmarkEngine
                 _algorithm.Run();
                 stopwatch.Stop();
 
-                runTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
+                runTimes.Add(stopwatch.Elapsed.TotalSeconds);
             }
 
             // Среднее время пяти запусков
@@ -60,8 +60,7 @@ public class BenchmarkEngine
 
         Directory.CreateDirectory(folderPath);
 
-        string fileName =
-            $"{_algorithm.Name}_{_algorithm.Complexity}_results.csv";
+        string fileName = string.Format("{0}_{1}_results.csv", _algorithm.Name, _algorithm.Complexity);
 
         string fullPath = Path.Combine(folderPath, fileName);
 
@@ -72,9 +71,11 @@ public class BenchmarkEngine
             foreach (double point in timeResults)
             {
                 file.WriteLine(
-                    $"{n};{point.ToString(
-                        "F6",
-                        System.Globalization.CultureInfo.InvariantCulture)}");
+                    string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        "{0};{1:F8}",
+                        n,
+                        point));
 
                 n += _steps;
             }

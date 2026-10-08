@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using AlgorithmsTester.Core.Algorithm;
-using Microsoft.Data.Sqlite;
 
 namespace AlgorithmsTester.Core;
 
@@ -8,114 +10,160 @@ public class Programm
 {
     public static void Main(string[] args)
     {
-        /*int nstart = 80000;
-        int nstop = 100000;
-        int steps = 50;
-        int repeats = 1;
-        //var algorithm = new VectorAlgorithms();
-        //var algorithm = new ConstAlgorithms();
-        var algorithm = new MultiplicationAlgorithms();
-        //var algorithm = new NaivePolynomialAlgorithm();
-        //var algorithm = new HornerPolynomialAlgorithm();
-        
-        //var algorithm = new SimplePowAlgorithm();
-        //var algorithm = new RecursiveLinearPowAlgorithm();
-        //var algorithm = new QuickPowAlgorithm();
-        
-        //var algorithm = new DijkstraAlgorithm();
-        //var algorithm = new KaratsubaAlgorithm();
-        //var algorithm = new BubbleSortAlgorithm();
-        //var algorithm = new QuickSortAlgorithm();
-        //var algorithm = new TimsortAlgorithm();
-        //var algorithm = new MatrixMultiplicationAlgorithm();
-        
-        var benchmark = new BenchmarkEngine(nstart, nstop,steps, repeats, algorithm);
-        List<double> realtime = benchmark.AlgorithmTimer();
-        //List<double> stepcount = benchmark.AlgorithmCount();
+        Console.WriteLine("===============================================================");
+        Console.WriteLine("       ЗАПУСК ПОЛНОГО ПАКЕТА БЕНЧМАРКОВ ВСЕХ АЛГОРИТМОВ       ");
+        Console.WriteLine("===============================================================");
+
+        Stopwatch totalSw = Stopwatch.StartNew();
+
+        // 1. Векторные операции (N: 0..100000, шаг 1000, 5 повторов)
+        Console.WriteLine("\n[1/6] Векторные операции (O(1), O(n), O(n))...");
+        RunBenchmark("Векторные операции", new ConstAlgorithms(), 0, 100000, 1000, 5);
+        RunBenchmark("Векторные операции", new VectorAlgorithms(), 0, 100000, 1000, 5);
+        RunBenchmark("Векторные операции", new MultiplicationAlgorithms(), 0, 100000, 1000, 5);
+
+        // 2. Полиномы (N: 0..2000, шаг 50, 5 повторов)
+        Console.WriteLine("\n[2/6] Полиномы (O(n^2), O(n), O(n^1.585))...");
+        RunBenchmark("Полиномы", new NaivePolynomialAlgorithm(), 0, 2000, 50, 5);
+        RunBenchmark("Полиномы", new HornerPolynomialAlgorithm(), 0, 2000, 50, 5);
+        RunBenchmark("Полиномы", new KaratsubaAlgorithm(), 0, 2000, 50, 5);
+
+        // 3. Возведение в степень (подсчёт элементарных шагов/операций) (N: 0..1000, шаг 20)
+        Console.WriteLine("\n[3/6] Возведение в степень (подсчёт шагов: O(n), O(n), O(log n))...");
+        RunBenchmark("Возведение в степень", new SimplePowAlgorithm(), 0, 1000, 20, 1, isStepCount: true);
+        RunBenchmark("Возведение в степень", new RecursiveLinearPowAlgorithm(), 0, 1000, 20, 1, isStepCount: true);
+        RunBenchmark("Возведение в степень", new QuickPowAlgorithm(), 0, 1000, 20, 1, isStepCount: true);
+
+        // 4. Сортировки (N: 0..5000, шаг 100, 5 повторов)
+        Console.WriteLine("\n[4/6] Сортировки (O(n^2), O(n log n), O(n log n))...");
+        RunBenchmark("Сортировки", new BubbleSortAlgorithm(), 0, 5000, 100, 5);
+        RunBenchmark("Сортировки", new QuickSortAlgorithm(), 0, 5000, 100, 5);
+        RunBenchmark("Сортировки", new TimsortAlgorithm(), 0, 5000, 100, 5);
+
+        // 5. Графы - Дейкстра (V: 0..300, шаг 10, 5 повторов)
+        Console.WriteLine("\n[5/6] Графы (Алгоритм Дейкстры, O(V^2))...");
+        RunBenchmark("Графы", new DijkstraAlgorithm(), 0, 300, 10, 5);
+
+        // 6. Матричные операции
+        Console.WriteLine("\n[6/6] Матричные операции (3D и 2D сетки)...");
+        var matrixAlgo = new MatrixMultiplicationAlgorithm();
+        RunMatrix3DBenchmark("Матричные операции", matrixAlgo, 50, 300, 50, 300, 50, 3);
+        RunBenchmark("Матричные операции", matrixAlgo, 0, 300, 20, 3);
+
+        // Синхронизация CSV файлов в папки Desktop и Result
+        Console.WriteLine("\nСинхронизация результатов CSV в папку Desktop/Result...");
+        SyncResultFiles();
+
+        totalSw.Stop();
+        Console.WriteLine("\n===============================================================");
+        Console.WriteLine(string.Format("ВСЕ 14 АЛГОРИТМОВ УСПЕШНО ПРОТЕСТИРОВАНЫ ЗА {0:F1} сек!", totalSw.Elapsed.TotalSeconds));
+        Console.WriteLine("Результаты сохранены в БД benchmark.db и файлы Result/*.csv");
+        Console.WriteLine("===============================================================");
+    }
+
+    private static void RunBenchmark(
+        string groupName,
+        IAlgorithmTemplate algorithm,
+        int nStart,
+        int nStop,
+        int step,
+        int repeats,
+        bool isStepCount = false)
+    {
+        string mode = isStepCount ? "подсчёт шагов" : "замер времени";
+        Console.WriteLine(string.Format("  -> {0} ({1}): N от {2} до {3}, шаг {4} [{5}]...",
+            algorithm.Name, algorithm.Complexity, nStart, nStop, step, mode));
+
+        Stopwatch sw = Stopwatch.StartNew();
+        var engine = new BenchmarkEngine(nStart, nStop, step, repeats, algorithm);
+        List<double> results;
+
+        if (isStepCount)
+        {
+            results = engine.AlgorithmCount();
+        }
+        else
+        {
+            results = engine.AlgorithmTimer();
+        }
+
         TheoreticalFitter fitter = new TheoreticalFitter(algorithm);
-        fitter.TeoreticalAlgorithmTimer(nstart, nstop, realtime, steps);
-        //fitter.TeoreticalAlgorithmTimer(nstart, nstop, stepcount, steps);
-        
-        //DatabaseManager.SaveExperimentRun("Вектор", algorithm,nstart, nstop, steps, repeats, realtime);
-        //CreateTable();
-        */
-        
-        // Параметры для матричного умножения (3D сетка по n и m)
-        int nstart = 50;
-        int nstop = 300;
-        int mstart = 50;
-        int mstop = 300;
-        int steps = 50;
-        int repeats = 3;
+        fitter.TeoreticalAlgorithmTimer(nStart, nStop, results, step);
 
-        var algorithm = new MatrixMultiplicationAlgorithm();
-        var benchmark = new BenchmarkEngine(nstart, nstop, steps, repeats, algorithm);
+        long expId = DatabaseManager.SaveExperimentRun(groupName, algorithm, nStart, nStop, step, repeats, results);
+        sw.Stop();
 
-        Console.WriteLine($"Запуск 3D-бенчмарка матриц: N от {nstart} до {nstop}, M от {mstart} до {mstop}, шаг {steps}...");
-        double[,] results3D = benchmark.AlgorithmMatrixTimer(mstart, mstop, steps);
+        Console.WriteLine(string.Format("     Готово за {0:F2} с (Эксперимент ID: {1}, точек: {2})",
+            sw.Elapsed.TotalSeconds, expId, results.Count));
+    }
 
-        Console.WriteLine($"Замеры завершены. Сохранение в базу данных и CSV...");
+    private static void RunMatrix3DBenchmark(
+        string groupName,
+        MatrixMultiplicationAlgorithm algorithm,
+        int nStart,
+        int nStop,
+        int mStart,
+        int mStop,
+        int step,
+        int repeats)
+    {
+        Console.WriteLine(string.Format("  -> {0} 3D: N от {1} до {2}, M от {3} до {4}, шаг {5}...",
+            algorithm.Name, nStart, nStop, mStart, mStop, step));
+
+        Stopwatch sw = Stopwatch.StartNew();
+        var engine = new BenchmarkEngine(nStart, nStop, step, repeats, algorithm);
+        double[,] results3D = engine.AlgorithmMatrixTimer(mStart, mStop, step);
+
         long expId = DatabaseManager.SaveExperimentRun(
-            "Матричные операции",
+            groupName,
             algorithm,
-            nstart,
-            nstop,
-            mstart,
-            mstop,
-            steps,
+            nStart,
+            nStop,
+            mStart,
+            mStop,
+            step,
             repeats,
             results3D);
 
-        Console.WriteLine($"Эксперимент успешно сохранён в БД (ID: {expId}) и в папку Result!");
+        sw.Stop();
+        Console.WriteLine(string.Format("     Готово за {0:F2} с (Эксперимент ID: {1})",
+            sw.Elapsed.TotalSeconds, expId));
     }
 
-    //метод чтоб сделать SQL таблицу
-    public static async void CreateTable()
+    private static void SyncResultFiles()
     {
-        // 1. Формируем строку подключения (файл создастся рядом с .exe)
-        const string connectionString = "Data Source=alghoritm.db";
+        string sourceDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Result");
+        if (!Directory.Exists(sourceDir))
+            return;
 
-// await using гарантирует автоматическое закрытие файла даже при ошибке!
-        await using var connection = new SqliteConnection(connectionString);
-        await connection.OpenAsync();
+        string[] candidateDirs = new[]
+        {
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\AlgorithmsTester.Desktop\Result")),
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\AlgorithmsTester.Desktop\bin\Debug\net10.0\Result")),
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\Result")),
+            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "AlgorithmsTester.Desktop", "Result")),
+            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "AlgorithmsTester.Desktop", "bin", "Debug", "net10.0", "Result"))
+        };
 
-// 2. Создаем команду через само соединение
-        await using var command = connection.CreateCommand();
+        var files = Directory.GetFiles(sourceDir, "*.csv");
+        foreach (string targetDir in candidateDirs)
+        {
+            try
+            {
+                if (Path.GetFullPath(targetDir).Equals(Path.GetFullPath(sourceDir), StringComparison.OrdinalIgnoreCase))
+                    continue;
 
-// 3. Пишем SQL для создания таблицы пользователей
-        command.CommandText = 
-            """
-            -- 1. Таблица сессий/экспериментов
-            CREATE TABLE IF NOT EXISTS Experiments (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Уникальный номер прогона
-                AlgorithmName TEXT NOT NULL,           -- Имя алгоритма (например, "Vector", "Karatsuba")
-                GroupName TEXT NOT NULL,               -- группа алгоритма
-                ExperimentDate TEXT NOT NULL,          -- Дата и время запуска
-                NStart INTEGER NOT NULL,               -- С какого N начали
-                NStop INTEGER NOT NULL,                -- До какого N считали
-                Step INTEGER NOT NULL,                 -- Шаг прироста N
-                RunsCount INTEGER NOT NULL DEFAULT 5   -- Число повторов для усреднения
-            );
-            
-            -- 2. Таблица точек замеров
-            CREATE TABLE IF NOT EXISTS Measurements (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Уникальный номер замера
-                ExperimentId INTEGER NOT NULL,         -- Ссылка на ID из таблицы Experiments
-                N INTEGER NOT NULL,                    -- Размерность N
-                RunNumber INTEGER NOT NULL,            -- Номер прогона (1, 2, 3, 4, 5)
-                ElapsedTimeMs REAL NOT NULL,           -- Затраченное время (double в мс)
-                StepCount INTEGER,                     -- Число шагов (для степеней, иначе NULL)
-                
-                -- Связываем замер с экспериментом (если удалить эксперимент — замеры удалятся сами)
-                FOREIGN KEY (ExperimentId) REFERENCES Experiments(Id) ON DELETE CASCADE
-            );
-            
-            -- Индекс для мгновенного поиска точек по номеру эксперимента
-            CREATE INDEX IF NOT EXISTS idx_measurements_exp ON Measurements(ExperimentId);
-            
-            """;
-
-// 4. Нажимаем кнопку ExecuteNonQuery: создаем таблицу, назад ничего не ждём
-        await command.ExecuteNonQueryAsync();
+                Directory.CreateDirectory(targetDir);
+                foreach (string file in files)
+                {
+                    string dest = Path.Combine(targetDir, Path.GetFileName(file));
+                    File.Copy(file, dest, true);
+                }
+            }
+            catch
+            {
+                // Игнорируем недоступные директории
+            }
+        }
     }
 }

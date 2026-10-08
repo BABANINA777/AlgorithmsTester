@@ -122,6 +122,58 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!-- СПРАВА ОТ ЛЕГЕНДЫ: БЛОК ТЕОРЕТИЧЕСКИХ ФОРМУЛ -->
+                <Border Background="#121214" 
+                        BorderBrush="#33FFFFFF" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="14,6" 
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="Теория:" 
+                                   Foreground="#8E8E93" 
+                                   FontFamily="Inter, Segoe UI, sans-serif" 
+                                   FontSize="12" 
+                                   FontWeight="SemiBold" 
+                                   VerticalAlignment="Center"/>
+                        
+                        <ItemsControl ItemsSource="{Binding SelectedCard.SeriesList}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="10"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AlgorithmSeriesItem">
+                                    <Border Background="#1A1A1E" 
+                                            BorderBrush="#25FFFFFF" 
+                                            BorderThickness="1" 
+                                            CornerRadius="6" 
+                                            Padding="10,4" 
+                                            VerticalAlignment="Center">
+                                        <TextBlock FontFamily="Cambria Math, STIX Two Math, Georgia, serif" 
+                                                   FontSize="14" 
+                                                   VerticalAlignment="Center">
+                                            <Run Text="{Binding FunctionName}" FontStyle="Italic" Foreground="#94A3B8"/>
+                                            <Run Text="(" Foreground="#94A3B8"/>
+                                            <Run Text="{Binding Variable}" FontStyle="Italic" Foreground="#38BDF8"/>
+                                            <Run Text=") = " Foreground="#94A3B8"/>
+                                            <Run Text="c" FontStyle="Italic" FontWeight="Bold" Foreground="{Binding TheoreticalColor}"/>
+                                            <Run Text="{Binding FormulaMultiplier}" Foreground="#94A3B8"/>
+                                            <Run Text="{Binding FormulaBase}" FontStyle="Italic" Foreground="#38BDF8"/>
+                                            <Run Text="{Binding FormulaExponent}" 
+                                                 BaselineAlignment="Superscript" 
+                                                 FontSize="10" 
+                                                 FontWeight="Bold" 
+                                                 Foreground="#38BDF8"/>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
             </StackPanel>
             
             <!--сам график-->

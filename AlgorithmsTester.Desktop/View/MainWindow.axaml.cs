@@ -69,6 +69,9 @@ public partial class MainWindow : Window
         _crosshair.LineWidth = 1;
         _crosshair.LinePattern = LinePattern.Dashed;
         _crosshair.LineColor = Color.FromHex("#77FFFFFF");
+        // создаем подписи осей
+        BenchmarkPlot.Plot.XLabel("Размерность входных данных (N)");
+        BenchmarkPlot.Plot.YLabel("Время выполнения (c)");
 
         // Настраиваем нижнюю панель под открытую карточку
         AlgorithmSelector.ItemsSource = Card.Names;
